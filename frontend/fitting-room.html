@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUЯA | 3D Fitting Room</title>
+    <meta name="description" content="AUЯA Digital Twin Laboratory — 3D Virtual Try-On powered by Gemini AI">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,600;1,600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon-cyan: #00f2fe;
+            --neon-violet: #8a2be2;
+            --neon-red: #ff4757;
+            --neon-green: #43e97b;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #030303; 
+            color: #ffffff; 
+            overflow: hidden; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        h1, h2, h3, .serif { font-family: 'Playfair Display', serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .glass { 
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+        }
+        
+        .text-gradient { 
+            background: linear-gradient(to right, var(--neon-cyan) 0%, var(--neon-violet) 100%); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+
+        .mesh-bg { 
+            position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; 
+            background: radial-gradient(circle at 50% 50%, rgba(0, 242, 254, 0.06), transparent 50%), 
+                        radial-gradient(circle at 80% 20%, rgba(138, 43, 226, 0.06), transparent 50%); 
+            z-index: -1; animation: rotateBg 40s linear infinite; 
+        }
+        @keyframes rotateBg { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .custom-cursor {
+            position: fixed; top: 0; left: 0; width: 16px; height: 16px;
+            border-radius: 50%; pointer-events: none; z-index: 9999;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 12px var(--neon-cyan), 0 0 30px var(--neon-cyan);
+            mix-blend-mode: screen; transform: translate(-50%, -50%);
+        }
+        .cursor-ring {
+            position: fixed; top: 0; left: 0; width: 40px; height: 40px;
+            border-radius: 50%; pointer-events: none; z-index: 9998;
+            border: 1px solid rgba(255,255,255,0.15); transform: translate(-50%, -50%);
+        }
+
+        /* Layout */
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 320px;
+            gap: 1rem;
+            flex: 1;
+            padding: 1rem;
+            padding-top: 5rem;
+            height: calc(100vh - 0px);
+            overflow: hidden;
+        }
+        @media (max-width: 1024px) {
+            .layout-grid { grid-template-columns: 1fr; height: auto; overflow-y: auto; }
+        }
+
+        /* 3D canvas container */
+        * { cursor: auto !important; }
+        #three-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 1.5rem;
+            overflow: hidden;
+        }
+        #three-canvas canvas {
+            display: block;
+            border-radius: 1.5rem;
+        }
+
+        /* Sidebar scrollbar */
+        .sidebar-scroll::-webkit-scrollbar { width: 5px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        /* Outfit card */
+        .outfit-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .outfit-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,242,254,0.05), transparent);
+            transition: left 0.5s;
+        }
+        .outfit-card:hover::before { left: 100%; }
+        .outfit-card:hover {
+            border-color: rgba(0,242,254,0.3);
+            box-shadow: 0 0 20px rgba(0,242,254,0.1);
+            transform: translateY(-2px);
+        }
+        .outfit-card.active {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 25px rgba(0,242,254,0.2);
+        }
+
+        /* Color swatch */
+        .color-swatch {
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.2);
+            display: inline-block;
+        }
+
+        /* Scan button */
+        .scan-btn {
+            background: linear-gradient(135deg, rgba(0,242,254,0.15), rgba(138,43,226,0.15));
+            border: 1px solid rgba(0,242,254,0.3);
+            transition: all 0.3s;
+        }
+        .scan-btn:hover {
+            box-shadow: 0 0 30px rgba(0,242,254,0.3);
+            border-color: var(--neon-cyan);
+        }
+
+        /* Bio metric card */
+        .bio-metric {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 12px 16px;
+        }
+
+        /* Progress bar for scan */
+        .scan-progress {
+            height: 3px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .scan-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-violet));
+            border-radius: 10px;
+            box-shadow: 0 0 10px var(--neon-cyan);
+            transition: width 2s ease;
+        }
+
+        /* Status indicator */
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: statusPulse 2s infinite;
+        }
+        @keyframes statusPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(0,242,254,0.5); }
+            50% { box-shadow: 0 0 0 6px rgba(0,242,254,0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="mesh-bg"></div>
+
+    <!-- Nav -->
+    <nav class="fixed w-full top-0 z-50 glass border-b-0 border-white/10 px-8 py-3 flex justify-between items-center">
+        <a href="index.html" class="text-2xl font-bold tracking-widest">AUЯA<span class="text-[#00f2fe]">.</span></a>
+        <div class="flex items-center gap-2">
+            <div class="status-dot bg-[var(--neon-cyan)]"></div>
+            <span class="text-xs text-gray-400 mono">DIGITAL TWIN LAB</span>
+        </div>
+        <div class="space-x-4">
+            <a href="dashboard.html" class="text-sm font-medium text-gray-300 hover:text-white transition">Dashboard</a>
+            <a href="ai-stylist.html" class="text-sm font-medium text-gray-300 hover:text-white transition">AI Stylist</a>
+            <a href="runway.html" class="text-sm font-medium text-gray-300 hover:text-white transition">Runway</a>
+        </div>
+    </nav>
+
+    <div class="layout-grid">
+        <!-- ═══ LEFT PANEL: Biometric Scanner ═══ -->
+        <div class="glass rounded-2xl flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-white/10">
+                <h2 class="text-lg font-bold flex items-center gap-2">
+                    <span class="text-gradient">⬡</span> Biometric Scanner
+                </h2>
+                <p class="text-[11px] text-gray-500 mt-1 mono">GEMINI VISION · NEURAL ANALYSIS</p>
+            </div>
+
+            <div class="p-5 flex-1 overflow-y-auto sidebar-scroll space-y-4">
+                <!-- Scan Body Button -->
+                <label class="scan-btn w-full rounded-xl p-4 flex flex-col items-center gap-3 cursor-pointer block">
+                    <div class="w-14 h-14 rounded-full bg-gradient-to-br from-[var(--neon-cyan)]/20 to-[var(--neon-violet)]/20 border border-white/10 flex items-center justify-center text-2xl">
+                        📷
+                    </div>
+                    <span class="text-sm font-semibold">Scan Body</span>
+                    <span class="text-[10px] text-gray-400">Upload a full-body photo for AI analysis</span>
+                    <input type="file" accept="image/*" id="scan-upload" class="hidden">
+                </label>
+
+                <!-- Scan Progress (hidden by default) -->
+                <div id="scan-status" class="hidden">
+                    <div class="scan-progress">
+                        <div id="scan-bar" class="scan-progress-bar" style="width: 0%"></div>
+                    </div>
+                    <p id="scan-text" class="text-[10px] text-[var(--neon-cyan)] mt-2 animate-pulse mono">Analyzing biometrics...</p>
+                </div>
+
+                <!-- Photo preview -->
+                <img id="photo-preview" class="hidden w-full rounded-xl border border-white/10 object-cover max-h-40">
+
+                <!-- Biometric Results -->
+                <div id="bio-results" class="space-y-3">
+                    <div class="bio-metric flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest">Height</p>
+                            <p class="text-lg font-bold mono flex items-baseline">
+                                <input type="number" id="manual-height" value="178" class="bg-transparent w-16 outline-none text-white border-b border-white/20 mr-1 text-center"> <span class="text-xs text-gray-400">cm</span>
+                            </p>
+                        </div>
+                        <div class="text-2xl opacity-30">📏</div>
+                    </div>
+                    <div class="bio-metric flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest">Weight</p>
+                            <p class="text-lg font-bold flex items-baseline">
+                                <input type="number" id="manual-weight" value="72" class="bg-transparent w-16 outline-none text-white border-b border-white/20 mr-1 text-center font-mono"> <span class="text-xs text-gray-400">kg</span>
+                            </p>
+                        </div>
+                        <div class="text-2xl opacity-30">⚖️</div>
+                    </div>
+                    <div class="bio-metric flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest">Skin Tone</p>
+                            <p id="bio-skintone" class="text-sm font-bold flex items-center gap-2">
+                                <span id="skin-swatch" class="color-swatch" style="background: #c68642;"></span>
+                                <span id="skin-hex" class="mono text-xs text-gray-300">#c68642</span>
+                            </p>
+                        </div>
+                        <div class="text-2xl opacity-30">🎨</div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="pt-4 border-t border-white/10 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-400">Auto-Rotate</span>
+                        <button id="toggle-rotate" class="w-10 h-5 rounded-full bg-[var(--neon-cyan)]/30 border border-[var(--neon-cyan)]/50 relative transition" data-on="true">
+                            <div class="w-4 h-4 rounded-full bg-[var(--neon-cyan)] absolute top-0.5 right-0.5 transition-all shadow-[0_0_8px_var(--neon-cyan)]"></div>
+                        </button>
+                    </div>
+                    <button id="reset-camera-btn" class="w-full glass rounded-lg py-2 text-xs hover:bg-white/10 transition">Reset Camera</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ CENTER: 3D Scene ═══ -->
+        <div class="glass rounded-2xl relative overflow-hidden flex flex-col border border-white/10">
+            <!-- Scene Header -->
+            <div class="absolute top-5 left-6 z-20">
+                <h2 class="text-xl font-bold">Digital <span class="serif italic">Twin.</span></h2>
+                <p class="text-[11px] text-gray-500 mono">CLICK + DRAG TO ROTATE · SCROLL TO ZOOM</p>
+            </div>
+            <div class="absolute top-5 right-6 z-20 flex gap-2">
+                <button id="reset-look-btn" class="glass px-4 py-1.5 rounded-full text-[11px] hover:bg-white/10 transition mono">RESET LOOK</button>
+            </div>
+
+            <!-- Three.js Canvas Container -->
+            <div id="canvas-wrapper" class="flex-1 relative w-full h-full">
+                <!-- Empty State -->
+                <div id="awaiting-data-overlay" class="absolute inset-0 flex flex-col items-center justify-center z-10">
+                    <div class="w-24 h-24 rounded-full border border-white/10 flex items-center justify-center mb-4 bg-white/5">
+                        <span class="text-3xl opacity-50">🧍</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Awaiting Biometric Data</h3>
+                    <p class="text-sm text-gray-500 max-w-xs text-center">Please enter your height and weight, and upload a full-body photo to initialize your Digital Twin.</p>
+                </div>
+                
+                <div id="three-canvas" class="w-full h-full opacity-0 pointer-events-none scale-95 transition-all duration-1000"></div>
+            </div>
+
+            <!-- Bottom HUD -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 glass rounded-full px-6 py-2 flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="status-dot bg-[var(--neon-green)]"></div>
+                    <span class="text-[10px] text-gray-300 mono">ENGINE ACTIVE</span>
+                </div>
+                <div class="w-px h-4 bg-white/10"></div>
+                <span id="fps-counter" class="text-[10px] text-gray-500 mono">60 FPS</span>
+                <div class="w-px h-4 bg-white/10"></div>
+                <span class="text-[10px] text-gray-500 mono">THREE.js r163</span>
+            </div>
+        </div>
+
+        <!-- ═══ RIGHT PANEL: Wardrobe ═══ -->
+        <div class="glass rounded-2xl flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-white/10">
+                <h2 class="text-lg font-bold flex items-center gap-2">
+                    <span class="text-gradient">✦</span> Suggested Outfits
+                </h2>
+                <p class="text-[11px] text-gray-500 mt-1 mono">CLICK TO APPLY TO AVATAR</p>
+            </div>
+
+            <div class="p-4 flex-1 overflow-y-auto sidebar-scroll space-y-3" id="outfit-list">
+                <!-- Outfit cards rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SCRIPTS ═══ -->
+    <script type="module">
+        import { initScene, applyBiometrics, changeOutfit, changeOutfitCustom, resetCamera, toggleAutoRotate, OUTFIT_PRESETS } from './fitting-room.js';
+
+        const canvasEl = document.getElementById('three-canvas');
+        const emptyState = document.getElementById('awaiting-data-overlay');
+        const heightInput = document.getElementById('manual-height');
+        const weightInput = document.getElementById('manual-weight');
+        let sceneInitialized = false;
+        let imageUploaded = false;
+
+        // Function to reveal the 3D scene (Materializing Animation)
+        function initThreeJSScene() {
+            if (!sceneInitialized) {
+                // Initialize Three.js only when we have data
+                setTimeout(() => {
+                    initScene(canvasEl);
+                    sceneInitialized = true;
+                    
+                    // Materializing animation
+                    gsap.to(emptyState, { opacity: 0, scale: 0.9, duration: 0.5, onComplete: () => {
+                        emptyState.remove(); // Remove overlay completely from DOM
+                    }});
+                    
+                    canvasEl.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
+                    gsap.fromTo(canvasEl, 
+                        { opacity: 0, filter: 'blur(20px)', scale: 0.8 }, 
+                        { opacity: 1, filter: 'blur(0px)', scale: 1, duration: 2, ease: "power3.out" }
+                    );
+                }, 100);
+            }
+        }
+
+        function attemptSpawn() {
+            const h = parseFloat(heightInput.value) || 0;
+            const w = parseFloat(weightInput.value) || 0;
+            
+            if (imageUploaded && h > 0 && w > 0) {
+                initThreeJSScene();
+                // We consider initScene to also build the primitive mannequin (spawnMannequin)
+                applyBiometrics({ height_cm: h, weight_kg: w });
+            }
+        }
+
+        // ── Render Outfit Cards ──
+        const outfitMeta = {
+            midnight_blazer: { name: 'Midnight Blazer', desc: 'Structured elegance in deep navy', tag: 'FORMAL', img: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=200&auto=format&fit=crop' },
+            streetwear_black: { name: 'Streetwear Noir', desc: 'All-black with white sneaker contrast', tag: 'STREET', img: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=200&auto=format&fit=crop' },
+            summer_linen: { name: 'Summer Linen', desc: 'Breathable earth tones for warm days', tag: 'CASUAL', img: 'https://images.unsplash.com/photo-1620799140188-3b2a02fd9a77?w=200&auto=format&fit=crop' },
+            cyber_neon: { name: 'Cyber Neon', desc: 'Full cyberpunk with neon accents', tag: 'AVANT-GARDE', img: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=200&auto=format&fit=crop' },
+            urban_edge: { name: 'Urban Edge', desc: 'Dark utility for city nights', tag: 'URBAN', img: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=200&auto=format&fit=crop' },
+            classic_navy: { name: 'Classic Navy', desc: 'Timeless navy and brown leather', tag: 'SMART CASUAL', img: 'https://images.unsplash.com/photo-1507680434567-5739c80be1ac?w=200&auto=format&fit=crop' }
+        };
+
+        const outfitList = document.getElementById('outfit-list');
+        Object.entries(outfitMeta).forEach(([key, meta]) => {
+            const preset = OUTFIT_PRESETS[key];
+            const card = document.createElement('div');
+            card.className = 'outfit-card rounded-xl p-3 cursor-pointer';
+            card.dataset.outfit = key;
+            card.innerHTML = `
+                <div class="flex gap-3">
+                    <div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-white/10">
+                        <img src="${meta.img}" class="w-full h-full object-cover" alt="${meta.name}">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="text-sm font-semibold truncate">${meta.name}</h4>
+                            <span class="text-[8px] mono px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-gray-400 shrink-0">${meta.tag}</span>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mb-2">${meta.desc}</p>
+                        <div class="flex gap-1.5">
+                            <span class="color-swatch" style="background: #${preset.top.toString(16).padStart(6,'0')};"></span>
+                            <span class="color-swatch" style="background: #${preset.bottom.toString(16).padStart(6,'0')};"></span>
+                            <span class="color-swatch" style="background: #${preset.shoes.toString(16).padStart(6,'0')};"></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.outfit-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                changeOutfit(key);
+                // Flash effect
+                gsap.fromTo(card, { boxShadow: '0 0 40px rgba(0,242,254,0.4)' }, { boxShadow: '0 0 25px rgba(0,242,254,0.2)', duration: 0.8 });
+            });
+            outfitList.appendChild(card);
+        });
+
+        // ── Scan Body Handler ──
+        document.getElementById('scan-upload').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Show preview immediately
+            const objectUrl = URL.createObjectURL(file);
+            document.getElementById('photo-preview').src = objectUrl;
+            document.getElementById('photo-preview').classList.remove('hidden');
+
+            // Skin Tone Sync (Capture center pixel)
+            const imgEl = new Image();
+            imgEl.onload = function() {
+                const cvs = document.createElement('canvas');
+                cvs.width = imgEl.width; cvs.height = imgEl.height;
+                const ctx = cvs.getContext('2d');
+                ctx.drawImage(imgEl, 0, 0);
+                const cx = Math.floor(cvs.width / 2);
+                const cy = Math.floor(cvs.height / 2);
+                try {
+                    const px = ctx.getImageData(cx, cy, 1, 1).data;
+                    const hex = "#" + ("000000" + ((px[0] << 16) | (px[1] << 8) | px[2]).toString(16)).slice(-6);
+                    window.detectedSkinTone = hex; // store globally for fallback
+                } catch(e) {}
+            };
+            imgEl.src = objectUrl;
+            
+            imageUploaded = true;
+            attemptSpawn(); // Try to spawn immediately if inputs are filled
+
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                const base64 = event.target.result;
+
+                // Show progress
+                const status = document.getElementById('scan-status');
+                status.classList.remove('hidden');
+                document.getElementById('scan-bar').style.width = '30%';
+                document.getElementById('scan-text').textContent = 'Uploading to Gemini Vision...';
+
+                try {
+                    document.getElementById('scan-bar').style.width = '60%';
+                    document.getElementById('scan-text').textContent = 'Analyzing body proportions...';
+
+                    const res = await fetch('http://localhost:3000/api/generate-biometrics', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: base64 })
+                    });
+
+                    document.getElementById('scan-bar').style.width = '90%';
+                    document.getElementById('scan-text').textContent = 'Mapping biometrics to avatar...';
+
+                    const data = await res.json();
+
+                    if (data.biometrics) {
+                        const bio = data.biometrics;
+
+                        // Update UI with Gemini's structural data
+                        document.getElementById('skin-swatch').style.background = bio.skin_tone;
+                        document.getElementById('skin-hex').textContent = bio.skin_tone;
+
+                        // Reveal canvas if it's the first time
+                        initThreeJSScene();
+
+                        // Wait a tiny bit for initScene to finish, then apply biometrics
+                        setTimeout(() => {
+                            const h = parseFloat(heightInput.value) || 180;
+                            const w = parseFloat(weightInput.value) || 80;
+                            bio.height_cm = h;
+                            bio.weight_kg = w;
+                            if (window.detectedSkinTone) bio.skin_tone_hex = window.detectedSkinTone; // Override with exact pixel
+                            applyBiometrics(bio);
+                        }, 500);
+
+                        // Store in localStorage
+                        localStorage.setItem('aura_shoulders', bio.shoulders);
+                        localStorage.setItem('aura_waist', bio.waist);
+                        localStorage.setItem('aura_legs', bio.legs);
+                        localStorage.setItem('aura_skintone', bio.skin_tone);
+
+                        document.getElementById('scan-bar').style.width = '100%';
+                        document.getElementById('scan-text').textContent = '✓ Biometric scan complete';
+                        document.getElementById('scan-text').classList.remove('animate-pulse');
+
+                        // Animate bio cards
+                        gsap.fromTo('#bio-results .bio-metric', { opacity: 0, y: 10 }, { opacity: 1, y: 0, stagger: 0.15, duration: 0.5 });
+                    }
+
+                } catch (err) {
+                    console.error('Scan error:', err);
+                    document.getElementById('scan-text').textContent = '✗ Scan failed — Using Manual Data';
+                    document.getElementById('scan-text').classList.add('text-red-400');
+                    
+                    // Fallback: Still render the avatar using manual inputs
+                    initThreeJSScene();
+                    setTimeout(() => {
+                        const h = parseFloat(heightInput.value) || 180;
+                        const w = parseFloat(weightInput.value) || 80;
+                        applyBiometrics({ height_cm: h, weight_kg: w, skin_tone_hex: window.detectedSkinTone || '#c68642' });
+                    }, 500);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // ── Manual Overrides ──
+        function updateManualBiometrics() {
+            attemptSpawn();
+            if (!sceneInitialized) return; // Don't apply if canvas is hidden
+            const h = parseFloat(heightInput.value) || 180;
+            const w = parseFloat(weightInput.value) || 80;
+            applyBiometrics({ height_cm: h, weight_kg: w });
+        }
+
+        heightInput.addEventListener('input', updateManualBiometrics);
+        weightInput.addEventListener('input', updateManualBiometrics);
+
+        // ── Controls ──
+        document.getElementById('toggle-rotate').addEventListener('click', function() {
+            const isOn = this.dataset.on === 'true';
+            this.dataset.on = isOn ? 'false' : 'true';
+            const dot = this.querySelector('div');
+            if (isOn) {
+                dot.style.right = 'auto';
+                dot.style.left = '2px';
+                this.style.background = 'rgba(255,255,255,0.1)';
+                dot.style.background = '#666';
+                dot.style.boxShadow = 'none';
+            } else {
+                dot.style.left = 'auto';
+                dot.style.right = '2px';
+                this.style.background = 'rgba(0,242,254,0.3)';
+                dot.style.background = 'var(--neon-cyan)';
+                dot.style.boxShadow = '0 0 8px var(--neon-cyan)';
+            }
+            toggleAutoRotate(!isOn);
+        });
+
+        document.getElementById('reset-camera-btn').addEventListener('click', () => resetCamera());
+        document.getElementById('reset-look-btn').addEventListener('click', () => {
+            changeOutfit('midnight_blazer');
+            document.querySelectorAll('.outfit-card').forEach(c => c.classList.remove('active'));
+        });
+
+        // ── FPS Counter ──
+        let frameCount = 0, lastTime = performance.now();
+        function updateFPS() {
+            frameCount++;
+            const now = performance.now();
+            if (now - lastTime >= 1000) {
+                document.getElementById('fps-counter').textContent = `${frameCount} FPS`;
+                frameCount = 0;
+                lastTime = now;
+            }
+            requestAnimationFrame(updateFPS);
+        }
+        updateFPS();
+
+        // ── Entry Animation ──
+        gsap.from('.layout-grid > div', { opacity: 0, y: 30, stagger: 0.15, duration: 0.8, ease: 'power2.out', delay: 0.3 });
+    </script>
+</body>
+</html>

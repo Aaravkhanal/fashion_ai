@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUЯA | Your Style Matrix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon-cyan: #00f2fe; --neon-violet: #8a2be2; --neon-green: #43e97b; --neon-red: #ff4757; }
+        body { font-family: 'Inter', sans-serif; background-color: #030303; color: #fff; overflow-x: hidden; }
+        h1,h2,h3,.serif { font-family: 'Playfair Display', serif; }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
+        .text-gradient { background: linear-gradient(to right, var(--neon-cyan), var(--neon-violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .mesh-bg { position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 50% 50%, rgba(0,242,254,0.08), transparent 50%), radial-gradient(circle at 80% 20%, rgba(138,43,226,0.08), transparent 50%); z-index: -1; animation: rotateBg 40s linear infinite; }
+        @keyframes rotateBg { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        * { cursor: none !important; }
+        .custom-cursor { position: fixed; top: 0; left: 0; width: 16px; height: 16px; border-radius: 50%; pointer-events: none; z-index: 9999; background: var(--neon-cyan); box-shadow: 0 0 12px var(--neon-cyan), 0 0 30px var(--neon-cyan); mix-blend-mode: screen; transform: translate(-50%,-50%); }
+        .cursor-ring { position: fixed; top: 0; left: 0; width: 40px; height: 40px; border-radius: 50%; pointer-events: none; z-index: 9998; border: 1px solid rgba(255,255,255,0.15); transform: translate(-50%,-50%); }
+
+        /* Loading overlay */
+        #loading-overlay { position: fixed; inset: 0; z-index: 200; background: #030303; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .scan-bar { width: 280px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-top: 1.5rem; }
+        .scan-bar-fill { height: 100%; width: 0; background: linear-gradient(to right, var(--neon-cyan), var(--neon-violet)); border-radius: 4px; }
+
+        /* Do/Don't cards */
+        .do-card { transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275); }
+        .do-card:hover { transform: translateY(-6px); border-color: rgba(67,233,123,0.3); box-shadow: 0 8px 25px -8px rgba(67,233,123,0.2); }
+        .dont-card { transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275); }
+        .dont-card:hover { transform: translateY(-6px); border-color: rgba(255,71,87,0.3); box-shadow: 0 8px 25px -8px rgba(255,71,87,0.2); }
+
+        /* Lookbook scroll */
+        .lookbook-scroll { display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1rem; scroll-snap-type: x mandatory; -ms-overflow-style: none; scrollbar-width: none; }
+        .lookbook-scroll::-webkit-scrollbar { display: none; }
+        .lookbook-card { scroll-snap-align: start; min-width: 300px; flex-shrink: 0; transition: box-shadow 0.3s; }
+        .lookbook-card:hover { box-shadow: 0 20px 40px -10px rgba(0,242,254,0.15); }
+
+        /* 3D tilt */
+        .tilt-card { transform-style: preserve-3d; transition: transform 0.1s ease-out, box-shadow 0.3s; will-change: transform; }
+        .tilt-card .tilt-inner { transform: translateZ(20px); pointer-events: none; }
+
+        /* Loading glow text */
+        .glow-text { text-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan); animation: pulse-glow 2s ease-in-out infinite; }
+        @keyframes pulse-glow { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* Metrics strip */
+        .metric-pill { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 0.5rem 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+        .metric-pill span { color: var(--neon-cyan); font-weight: 600; }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="mesh-bg"></div>
+    <div class="custom-cursor" id="cursor-dot"></div>
+    <div class="cursor-ring" id="cursor-ring"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="text-3xl font-bold tracking-widest mb-6 glow-text">AUЯA<span class="text-[#00f2fe]">.</span></div>
+        <p class="text-gray-300 text-sm tracking-[0.3em] uppercase mb-1">Compiling your personal style matrix...</p>
+        <p class="text-gray-600 text-xs mb-6" id="scan-status">Initializing biometric analysis...</p>
+        <div class="scan-bar" style="width:360px;">
+            <div class="scan-bar-fill" id="scan-fill"></div>
+        </div>
+        <p class="text-gray-700 text-[10px] mt-3" id="scan-percent">0%</p>
+    </div>
+
+    <!-- Nav -->
+    <nav class="fixed w-full top-0 z-50 glass border-b-0 border-white/10 px-8 py-4 flex justify-between items-center">
+        <a href="index.html" class="text-2xl font-bold tracking-widest">AUЯA<span class="text-[#00f2fe]">.</span></a>
+        <a href="index.html" class="glass px-6 py-2 rounded-full text-sm font-semibold hover:bg-white/10 transition-all duration-300">← Back to Scanner</a>
+    </nav>
+
+    <!-- Main Content (hidden until loading completes) -->
+    <main id="dashboard-content" class="opacity-0 pt-28 pb-20 px-6 max-w-7xl mx-auto">
+
+        <!-- Header -->
+        <div class="text-center mb-10 dash-reveal">
+            <div class="inline-block glass px-4 py-1 rounded-full text-xs font-semibold tracking-wider text-gray-300 mb-6">✨ ANALYSIS COMPLETE</div>
+            <h1 class="text-5xl md:text-7xl font-bold mb-4">Your Aura Matrix <br>is <span class="text-gradient">Ready.</span></h1>
+            <p class="text-gray-400 text-lg max-w-xl mx-auto">Based on your biometric scan, here's your personalized style blueprint.</p>
+        </div>
+
+        <!-- User Metrics Strip -->
+        <div class="flex flex-wrap justify-center gap-3 mb-16 dash-reveal">
+            <div class="metric-pill">📏 Height: <span id="user-height">178 cm</span></div>
+            <div class="metric-pill">⚖️ Weight: <span id="user-weight">72 kg</span></div>
+            <div class="metric-pill">🎨 Type: <span>Deep Winter</span></div>
+            <div class="metric-pill">📐 Frame: <span>Athletic Inverted-V</span></div>
+            <div class="metric-pill">📅 Scanned: <span id="user-date">—</span></div>
+        </div>
+
+        <!-- Do's & Don'ts: Apparel -->
+        <div class="mb-16">
+            <h2 class="text-3xl font-bold mb-8 text-center">Apparel <span class="serif italic font-normal">Guide</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bento-grid">
+                <div class="do-card glass rounded-2xl p-8">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-8 h-8 rounded-full bg-[#43e97b]/20 flex items-center justify-center text-[#43e97b] text-sm font-bold">✓</div>
+                        <h3 class="text-xl font-bold text-[#43e97b]">Wear</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-300 text-sm">
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Structured shoulders &amp; tailored blazers</li>
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> V-neck and crew-neck shirts</li>
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Slim-fit trousers with a slight taper</li>
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Monochrome layering in deep tones</li>
+                    </ul>
+                </div>
+                <div class="dont-card glass rounded-2xl p-8">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-8 h-8 rounded-full bg-[#ff4757]/20 flex items-center justify-center text-[#ff4757] text-sm font-bold">✕</div>
+                        <h3 class="text-xl font-bold text-[#ff4757]">Avoid</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-300 text-sm">
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Baggy, oversized fits that hide frame</li>
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Horizontal stripes on torso</li>
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Low-contrast pastel color blocking</li>
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Distressed denim with heavy wash</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Do's & Don'ts: Accessories -->
+        <div class="mb-16">
+            <h2 class="text-3xl font-bold mb-8 text-center">Accessories <span class="serif italic font-normal">Guide</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bento-grid">
+                <div class="do-card glass rounded-2xl p-8">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-8 h-8 rounded-full bg-[#43e97b]/20 flex items-center justify-center text-[#43e97b] text-sm font-bold">✓</div>
+                        <h3 class="text-xl font-bold text-[#43e97b]">Wear</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-300 text-sm">
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Minimalist silver jewelry</li>
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Aviator or geometric sunglasses</li>
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Slim leather strap watches</li>
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Clean, structured leather bags</li>
+                    </ul>
+                </div>
+                <div class="dont-card glass rounded-2xl p-8">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-8 h-8 rounded-full bg-[#ff4757]/20 flex items-center justify-center text-[#ff4757] text-sm font-bold">✕</div>
+                        <h3 class="text-xl font-bold text-[#ff4757]">Avoid</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-300 text-sm">
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Chunky gold chains or bracelets</li>
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Oversized sport watches</li>
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Loud patterned ties or scarves</li>
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Novelty or logo-heavy belts</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Do's & Don'ts: Grooming -->
+        <div class="mb-20">
+            <h2 class="text-3xl font-bold mb-8 text-center">Grooming <span class="serif italic font-normal">Guide</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bento-grid">
+                <div class="do-card glass rounded-2xl p-8">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-8 h-8 rounded-full bg-[#43e97b]/20 flex items-center justify-center text-[#43e97b] text-sm font-bold">✓</div>
+                        <h3 class="text-xl font-bold text-[#43e97b]">Do</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-300 text-sm">
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Mid-fade with textured crop on top</li>
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Short, boxed beard — clean edges</li>
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Well-groomed, shaped eyebrows</li>
+                        <li class="flex items-start gap-2"><span class="text-[#43e97b] mt-0.5">→</span> Matte skin finish with SPF</li>
+                    </ul>
+                </div>
+                <div class="dont-card glass rounded-2xl p-8">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="w-8 h-8 rounded-full bg-[#ff4757]/20 flex items-center justify-center text-[#ff4757] text-sm font-bold">✕</div>
+                        <h3 class="text-xl font-bold text-[#ff4757]">Avoid</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-300 text-sm">
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Buzzcut — softens jawline too much</li>
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Full lumberjack beard — heavy look</li>
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Overly gelled, wet-look hairstyles</li>
+                        <li class="flex items-start gap-2"><span class="text-[#ff4757] mt-0.5">→</span> Unkempt facial hair or neckbeard</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Occasion Lookbooks -->
+        <div class="mb-10">
+            <h2 class="text-3xl font-bold mb-8 text-center">Occasion <span class="serif italic font-normal">Lookbooks</span></h2>
+            <div class="lookbook-scroll" id="lookbook-scroll">
+                <div class="lookbook-card tilt-card glass rounded-2xl overflow-hidden group">
+                    <div class="relative h-72 overflow-hidden">
+                        <img src="https://cdn.jsdelivr.net/gh/icons8/flat-color-icons@2.0/png/100/coat.png" class="w-full h-full object-cover opacity-50 group-hover:opacity-70 group-hover:scale-105 transition duration-700" alt="Premium coat">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                        <div class="absolute bottom-4 left-5 tilt-inner">
+                            <span class="text-xs uppercase tracking-widest text-[#00f2fe]">Theme 01</span>
+                            <h3 class="text-2xl font-bold">Casual / Street</h3>
+                        </div>
+                    </div>
+                    <div class="p-5"><p class="text-sm text-gray-400">Relaxed layers, premium sneakers, neutral palettes with a single accent piece.</p></div>
+                </div>
+                <div class="lookbook-card tilt-card glass rounded-2xl overflow-hidden group">
+                    <div class="relative h-72 overflow-hidden">
+                        <img src="https://cdn.jsdelivr.net/gh/icons8/flat-color-icons@2.0/png/100/tShirt.png" class="w-full h-full object-cover opacity-50 group-hover:opacity-70 group-hover:scale-105 transition duration-700" alt="Premium T‑Shirt">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                        <div class="absolute bottom-4 left-5 tilt-inner">
+                            <span class="text-xs uppercase tracking-widest text-[#43e97b]">Theme 02</span>
+                            <h3 class="text-2xl font-bold">Ivy / School</h3>
+                        </div>
+                    </div>
+                    <div class="p-5"><p class="text-sm text-gray-400">Knit polos, chinos, loafers, and cable-knit layers. Think preppy with a modern edge.</p></div>
+                </div>
+                <div class="lookbook-card tilt-card glass rounded-2xl overflow-hidden group">
+                    <div class="relative h-72 overflow-hidden">
+                        <img src="https://cdn.jsdelivr.net/gh/icons8/flat-color-icons@2.0/png/100/shoe.png" class="w-full h-full object-cover opacity-50 group-hover:opacity-70 group-hover:scale-105 transition duration-700" alt="Premium shoe">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                        <div class="absolute bottom-4 left-5 tilt-inner">
+                            <span class="text-xs uppercase tracking-widest text-[#8a2be2]">Theme 03</span>
+                            <h3 class="text-2xl font-bold">Night Out</h3>
+                        </div>
+                    </div>
+                    <div class="p-5"><p class="text-sm text-gray-400">Sharp silhouettes, dark tones, statement boots, and subtle metallic accessories.</p></div>
+                </div>
+                <div class="lookbook-card tilt-card glass rounded-2xl overflow-hidden group">
+                    <div class="relative h-72 overflow-hidden">
+                        <img src="https://cdn.jsdelivr.net/gh/icons8/flat-color-icons@2.0/png/100/necklace.png" class="w-full h-full object-cover opacity-50 group-hover:opacity-70 group-hover:scale-105 transition duration-700" alt="Premium necklace">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                        <div class="absolute bottom-4 left-5 tilt-inner">
+                            <span class="text-xs uppercase tracking-widest text-[#f857a6]">Theme 04</span>
+                            <h3 class="text-2xl font-bold">Formal</h3>
+                        </div>
+                    </div>
+                    <div class="p-5"><p class="text-sm text-gray-400">Slim-cut suits, polished oxfords, pocket squares, and a refined color story.</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back CTA -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mt-16">
+            <a href="index.html" class="inline-block glass px-8 py-4 rounded-full font-bold text-lg hover:bg-white/10 transition-all duration-300">← Back to Scanner</a>
+            <a href="fitting-room.html" class="inline-block bg-gradient-to-r from-[#00f2fe] to-[#8a2be2] text-white px-10 py-4 rounded-full font-bold text-lg hover:shadow-[0_0_40px_rgba(0,242,254,0.4),0_0_80px_rgba(138,43,226,0.2)] hover:scale-105 transition-all duration-300">
+                👗 Virtual Try-On Fitting Room →
+            </a>
+        </div>
+    </main>
+
+    <footer class="glass border-t border-white/10 mt-10 py-10 text-center text-gray-500 text-sm opacity-0" id="dash-footer">
+        <div class="text-2xl font-bold tracking-widest text-white mb-3">AUЯA<span class="text-[#00f2fe]">.</span></div>
+        <p>© 2026 Aura AI Styling Platform. Frontend UI Build.</p>
+    </footer>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        /* === Custom Cursor === */
+        const dot = document.getElementById('cursor-dot');
+        const ring = document.getElementById('cursor-ring');
+        window.addEventListener('mousemove', e => {
+            gsap.to(dot, { x: e.clientX, y: e.clientY, duration: 0.15, ease: 'power2.out' });
+            gsap.to(ring, { x: e.clientX, y: e.clientY, duration: 0.35, ease: 'power2.out' });
+        });
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('mouseenter', () => { gsap.to(dot, { scale: 1.5, duration: 0.3 }); gsap.to(ring, { scale: 1.6, opacity: 0.5, duration: 0.3 }); });
+            el.addEventListener('mouseleave', () => { gsap.to(dot, { scale: 1, duration: 0.3 }); gsap.to(ring, { scale: 1, opacity: 1, duration: 0.3 }); });
+        });
+
+        /* === localStorage: Inject user data === */
+        (function injectUserData() {
+            const height = localStorage.getItem('aura_height') || '178 cm';
+            const weight = localStorage.getItem('aura_weight') || '72 kg';
+            const date   = localStorage.getItem('aura_timestamp') || new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            document.getElementById('user-height').textContent = height;
+            document.getElementById('user-weight').textContent = weight;
+            document.getElementById('user-date').textContent   = date;
+        })();
+
+        /* === GSAP Loading Screen === */
+        const fill      = document.getElementById('scan-fill');
+        const statusEl  = document.getElementById('scan-status');
+        const percentEl = document.getElementById('scan-percent');
+        const statuses  = [
+            'Initializing biometric analysis...',
+            'Mapping 120 facial focal points...',
+            'Scanning body silhouette...',
+            'Matching color season palette...',
+            'Curating occasion lookbooks...',
+            'Finalizing your style matrix...'
+        ];
+
+        // GSAP-driven progress bar 0 → 100% over 2.5s
+        gsap.to({val: 0}, {
+            val: 100,
+            duration: 2.5,
+            ease: 'power1.inOut',
+            onUpdate: function() {
+                const pct = Math.round(this.targets()[0].val);
+                fill.style.width = pct + '%';
+                if (percentEl) percentEl.textContent = pct + '%';
+                const idx = Math.floor(pct / (100 / statuses.length));
+                if (statuses[Math.min(idx, statuses.length - 1)]) {
+                    statusEl.textContent = statuses[Math.min(idx, statuses.length - 1)];
+                }
+            },
+            onComplete: () => {
+                statusEl.textContent = 'Done. Rendering matrix...';
+                gsap.to('#loading-overlay', {
+                    opacity: 0, duration: 0.8, delay: 0.4, ease: 'power2.inOut',
+                    onComplete: () => {
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        revealDashboard();
+                    }
+                });
+            }
+        });
+
+        /* === Staggered Dashboard Reveal === */
+        function revealDashboard() {
+            // Fade in main + footer
+            gsap.to('#dashboard-content', { opacity: 1, duration: 0.5 });
+            gsap.to('#dash-footer', { opacity: 1, duration: 0.5, delay: 0.3 });
+
+            // Header + metrics float up
+            gsap.from('.dash-reveal', {
+                y: 40, opacity: 0, duration: 0.9, stagger: 0.15, ease: 'power3.out', delay: 0.2
+            });
+
+            // Bento grid cards — staggered float in
+            document.querySelectorAll('.bento-grid').forEach(grid => {
+                gsap.from(Array.from(grid.children), {
+                    y: 50, opacity: 0, duration: 0.8, stagger: 0.18, ease: 'power3.out',
+                    scrollTrigger: { trigger: grid, start: 'top 82%' }
+                });
+            });
+
+            // Lookbook cards slide in from right
+            gsap.from('.lookbook-card', {
+                x: 80, opacity: 0, duration: 0.8, stagger: 0.18, ease: 'power3.out',
+                scrollTrigger: { trigger: '#lookbook-scroll', start: 'top 82%' }
+            });
+
+            // 3D Tilt on lookbook cards
+            document.querySelectorAll('.tilt-card').forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+                    const dx = (e.clientX - cx) / (rect.width / 2);
+                    const dy = (e.clientY - cy) / (rect.height / 2);
+                    const rotX = -dy * 8;   // max 8° vertical tilt
+                    const rotY =  dx * 8;   // max 8° horizontal tilt
+                    gsap.to(card, {
+                        rotationX: rotX, rotationY: rotY,
+                        transformPerspective: 800,
+                        duration: 0.3, ease: 'power2.out'
+                    });
+                });
+                card.addEventListener('mouseleave', () => {
+                    gsap.to(card, {
+                        rotationX: 0, rotationY: 0, duration: 0.6, ease: 'elastic.out(1, 0.5)'
+                    });
+                });
+            });
+        }
+    </script>
+
+    <script>
+        /* ===== WEB AUDIO SOUNDS ===== */
+        const audioCtx2 = new (window.AudioContext || window.webkitAudioContext)();
+        function ensureAudio2() { if (audioCtx2.state === 'suspended') audioCtx2.resume(); }
+        document.addEventListener('click', ensureAudio2, { once: true });
+        function dashPlayWhoosh() {
+            ensureAudio2();
+            const bufSize = audioCtx2.sampleRate * 0.2, buf = audioCtx2.createBuffer(1, bufSize, audioCtx2.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < bufSize; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
+            const src = audioCtx2.createBufferSource(), f = audioCtx2.createBiquadFilter(), g = audioCtx2.createGain();
+            src.buffer = buf; f.type = 'bandpass'; f.frequency.setValueAtTime(2000, audioCtx2.currentTime);
+            f.frequency.exponentialRampToValueAtTime(400, audioCtx2.currentTime + 0.2);
+            g.gain.setValueAtTime(0.12, audioCtx2.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx2.currentTime + 0.2);
+            src.connect(f); f.connect(g); g.connect(audioCtx2.destination);
+            src.start(); src.stop(audioCtx2.currentTime + 0.2);
+        }
+        // Play whoosh when loading overlay finishes
+        setTimeout(dashPlayWhoosh, 3000);
+    </script>
+</body>
+</html>
