@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OUTFIT® | How It Works</title>
+    <meta name="description" content="The three-step process: Scan, Mirror, Fit. Discover how OUTFIT® engineers your perfect digital wardrobe.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        .step-number {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(6rem, 12vw, 10rem);
+            font-weight: 800;
+            color: var(--gold);
+            line-height: 1;
+            opacity: 0.25;
+        }
+        .step-section {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+        }
+        .visual-frame {
+            border: 1px solid var(--border-gold);
+            background: rgba(26,26,26,0.5);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        .visual-frame .scan-line {
+            animation: scan 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="main-header" class="scrolled">
+        <a href="index.html" class="logo">OUTFIT<span>®</span></a>
+        <div class="nav-links ml-auto mr-12">
+            <a href="fitting-room.html">Mirror</a>
+            <a href="ai-stylist.html">Stylist</a>
+            <a href="runway.html">Runway</a>
+        </div>
+        <a href="index.html" class="gold-link">Home</a>
+    </header>
+
+    <!-- HERO -->
+    <section class="pt-40 pb-16 px-8 max-w-5xl mx-auto text-center">
+        <div class="gsap-hero opacity-0 translate-y-10">
+            <p class="text-[10px] uppercase tracking-[0.5em] text-[#D4AF37] mb-8">The Process</p>
+            <h1 class="text-6xl md:text-8xl font-bold leading-tight mb-10 serif">
+                Scan. Mirror. <span class="italic text-[#D4AF37]">Fit.</span>
+            </h1>
+            <p class="text-white/35 text-lg max-w-2xl mx-auto leading-relaxed">
+                Three steps to a mathematically perfect wardrobe. No guesswork. No returns. Just precision.
+            </p>
+        </div>
+    </section>
+
+    <!-- STEP 1: SCAN -->
+    <section class="step-section px-8">
+        <div class="max-w-6xl mx-auto w-full gsap-step opacity-0 translate-y-10">
+            <div class="flex flex-col md:flex-row gap-16 items-center">
+                <div class="md:w-1/2">
+                    <div class="step-number">1</div>
+                    <h2 class="text-4xl md:text-5xl font-bold mb-8 serif -mt-4">The <span class="italic text-[#D4AF37]">Scan</span></h2>
+                    <p class="text-white/40 text-lg leading-relaxed mb-8">
+                        Upload a portrait. Input your baseline dimensions. Our dual neural engine maps 128 facial focal points and calculates your skeletal proportions in milliseconds.
+                    </p>
+                    <div class="space-y-4 text-sm text-white/25 uppercase tracking-widest">
+                        <p>→ Skin tone extraction (hex-precise)</p>
+                        <p>→ Shoulder-to-hip ratio mapping</p>
+                        <p>→ Limb proportion analysis</p>
+                    </div>
+                    <a href="index.html#scanner" class="btn-gold inline-block mt-12">Begin Scan</a>
+                </div>
+                <div class="md:w-1/2">
+                    <div class="visual-frame w-full h-80 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="w-28 h-28 mx-auto rounded-full border border-[#D4AF37]/30 border-dashed flex items-center justify-center mb-6" style="animation: spin 12s linear infinite;">
+                                <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-[#D4AF37]/20 to-white/5 blur-sm"></div>
+                            </div>
+                            <span class="text-[10px] uppercase tracking-[0.3em] text-[#D4AF37]/60">Mapping 128 focal points</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STEP 2: MIRROR -->
+    <section class="step-section px-8">
+        <div class="max-w-6xl mx-auto w-full gsap-step opacity-0 translate-y-10">
+            <div class="flex flex-col md:flex-row-reverse gap-16 items-center">
+                <div class="md:w-1/2">
+                    <div class="step-number">2</div>
+                    <h2 class="text-4xl md:text-5xl font-bold mb-8 serif -mt-4">The <span class="italic text-[#D4AF37]">Mirror</span></h2>
+                    <p class="text-white/40 text-lg leading-relaxed mb-8">
+                        Your biometric profile activates the Digital Mirror. Browse garments from our curated archive — each click dresses your AI avatar through the IDM-VTON neural engine.
+                    </p>
+                    <div class="space-y-4 text-sm text-white/25 uppercase tracking-widest">
+                        <p>→ Real-time AI virtual try-on</p>
+                        <p>→ Pinterest-powered garment discovery</p>
+                        <p>→ 3D avatar with biometric accuracy</p>
+                    </div>
+                    <a href="fitting-room.html" class="btn-gold inline-block mt-12">Open Mirror</a>
+                </div>
+                <div class="md:w-1/2">
+                    <div class="visual-frame w-full h-80 flex items-center justify-center relative">
+                        <div class="scan-line"></div>
+                        <div class="w-48 h-64 border border-[#D4AF37]/30 flex items-center justify-center">
+                            <span class="text-6xl opacity-20">👤</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STEP 3: FIT -->
+    <section class="step-section px-8">
+        <div class="max-w-6xl mx-auto w-full gsap-step opacity-0 translate-y-10">
+            <div class="flex flex-col md:flex-row gap-16 items-center">
+                <div class="md:w-1/2">
+                    <div class="step-number">3</div>
+                    <h2 class="text-4xl md:text-5xl font-bold mb-8 serif -mt-4">The <span class="italic text-[#D4AF37]">Fit</span></h2>
+                    <p class="text-white/40 text-lg leading-relaxed mb-8">
+                        Save your look. Share your style. The AI stylist refines recommendations with every interaction — learning your taste, your geometry, your identity.
+                    </p>
+                    <div class="space-y-4 text-sm text-white/25 uppercase tracking-widest">
+                        <p>→ Download your styled portrait</p>
+                        <p>→ AI learns from your choices</p>
+                        <p>→ Runway community sharing</p>
+                    </div>
+                    <a href="ai-stylist.html" class="btn-gold inline-block mt-12">Ask Stylist</a>
+                </div>
+                <div class="md:w-1/2">
+                    <div class="visual-frame w-full h-80 flex items-center justify-center flex-col gap-6">
+                        <div class="w-3/4 p-4 border border-white/5 bg-white/[0.02] text-left">
+                            <p class="text-xs text-white/30">User: Make it darker, keep it monochrome.</p>
+                        </div>
+                        <div class="w-3/4 p-4 border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05] text-left">
+                            <p class="text-xs text-[#D4AF37]/80">OUTFIT® AI: Recompiling metrics. Extracting Gore-Tex shells...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="py-32 px-8 max-w-4xl mx-auto text-center gsap-fade-up">
+        <h2 class="text-4xl md:text-6xl font-bold mb-10 serif">End the Era of <span class="italic text-[#D4AF37]">Trial and Error.</span></h2>
+        <a href="index.html#scanner" class="btn-gold">Initialize Neural Scan</a>
+    </section>
+
+    <footer class="site-footer">
+        <div class="flex justify-center gap-8 mb-6">
+            <a href="#" class="text-[10px] uppercase tracking-widest text-white/20 hover:text-[#D4AF37] transition">Instagram</a>
+            <a href="#" class="text-[10px] uppercase tracking-widest text-white/20 hover:text-[#D4AF37] transition">Twitter</a>
+            <a href="#" class="text-[10px] uppercase tracking-widest text-white/20 hover:text-[#D4AF37] transition">Discord</a>
+        </div>
+        <p class="text-[10px] uppercase tracking-[0.5em] text-white/15">© 2026 OUTFIT® Neural Networks</p>
+    </footer>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        gsap.to('.gsap-hero', { y: 0, opacity: 1, duration: 1.5, ease: 'power4.out', delay: 0.2 });
+
+        gsap.utils.toArray('.gsap-step').forEach(step => {
+            gsap.to(step, {
+                scrollTrigger: { trigger: step, start: 'top 80%' },
+                y: 0, opacity: 1, duration: 1, ease: 'power3.out'
+            });
+        });
+
+        gsap.utils.toArray('.gsap-fade-up').forEach(el => {
+            gsap.to(el, {
+                scrollTrigger: { trigger: el, start: 'top 85%' },
+                y: 0, opacity: 1, duration: 1, ease: 'power3.out'
+            });
+        });
+
+        window.addEventListener('DOMContentLoaded', () => { document.body.classList.add('loaded'); });
+    </script>
+</body>
+</html>

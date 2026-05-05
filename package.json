@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@gradio/client": "^2.2.0",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.22.1"

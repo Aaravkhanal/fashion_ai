@@ -3,244 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AUЯA | Runway</title>
+    <title>OUTFIT® | Runway Archive</title>
+    <meta name="description" content="Curated global fashion archive. Try on looks from the runway with AI virtual dressing.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
-    
+    <link rel="stylesheet" href="global.css">
     <style>
-        :root {
-            --neon-cyan: #00f2fe;
-            --neon-violet: #8a2be2;
-        }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #030303; 
-            color: #ffffff; 
-            overflow-x: hidden; 
-        }
-        h1, h2, h3, .serif { font-family: 'Playfair Display', serif; }
-        
-        .glass { 
-            background: rgba(255, 255, 255, 0.03); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-        }
-        
-        .mesh-bg { 
-            position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; 
-            background: radial-gradient(circle at 50% 50%, rgba(0, 242, 254, 0.08), transparent 50%), radial-gradient(circle at 80% 20%, rgba(138, 43, 226, 0.08), transparent 50%); 
-            z-index: -1; animation: rotateBg 40s linear infinite; 
-        }
-        @keyframes rotateBg { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .runway-grid { column-count: 1; column-gap: 2rem; }
+        @media (min-width: 640px) { .runway-grid { column-count: 2; } }
+        @media (min-width: 1024px) { .runway-grid { column-count: 3; } }
+        @media (min-width: 1280px) { .runway-grid { column-count: 4; } }
 
-        * { cursor: none !important; }
-        .custom-cursor {
-            position: fixed; top: 0; left: 0; width: 16px; height: 16px; border-radius: 50%; pointer-events: none; z-index: 9999;
-            background: var(--neon-cyan); box-shadow: 0 0 12px var(--neon-cyan), 0 0 30px var(--neon-cyan); mix-blend-mode: screen; transform: translate(-50%, -50%);
+        .runway-item {
+            break-inside: avoid; margin-bottom: 2rem;
+            position: relative; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: var(--transition-luxury);
         }
-        .cursor-ring {
-            position: fixed; top: 0; left: 0; width: 40px; height: 40px; border-radius: 50%; pointer-events: none; z-index: 9998;
-            border: 1px solid rgba(255,255,255,0.15); transform: translate(-50%, -50%);
-        }
-
-        /* Filter Pills */
-        .filter-pill {
-            padding: 0.5rem 1.5rem;
-            border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.05);
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
-        .filter-pill.active, .filter-pill:hover {
-            background: var(--neon-cyan);
-            color: black;
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 15px rgba(0,242,254,0.4);
-        }
-        .filter-scroll::-webkit-scrollbar { display: none; }
-
-        /* Masonry Grid */
-        .masonry-grid {
-            column-count: 1;
-            column-gap: 1.5rem;
-        }
-        @media (min-width: 640px) { .masonry-grid { column-count: 2; } }
-        @media (min-width: 1024px) { .masonry-grid { column-count: 3; } }
-        @media (min-width: 1280px) { .masonry-grid { column-count: 4; } }
-
-        .masonry-item {
-            break-inside: avoid;
-            margin-bottom: 1.5rem;
-            position: relative;
-            border-radius: 1.5rem;
-            overflow: hidden;
-            transform: translateZ(0); /* For performance */
-        }
-
-        /* Hover Physics */
-        .masonry-item img {
+        .runway-item img {
             width: 100%; height: auto; display: block;
-            transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), filter 0.8s ease;
+            transition: transform 1.2s cubic-bezier(0.25,1,0.5,1), filter 0.8s ease;
         }
-        .masonry-item:hover img {
-            transform: scale(1.08);
-            filter: brightness(0.6);
+        .runway-item:hover img {
+            transform: scale(1.03);
+            filter: brightness(0.5);
         }
-
         .item-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.2); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-            opacity: 0; transition: opacity 0.4s ease; display: flex; flex-direction: column; justify-content: space-between; padding: 1.5rem;
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.6s ease;
         }
-        .masonry-item:hover .item-overlay { opacity: 1; }
+        .runway-item:hover .item-overlay { opacity: 1; }
+        .runway-item:hover { border-color: var(--border-gold); }
 
-        .try-look-btn {
-            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-violet));
-            border-radius: 999px; padding: 0.75rem 1.5rem; font-weight: bold; color: white;
-            box-shadow: 0 0 20px rgba(0,242,254,0.3);
-            transform: translateY(20px); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: inline-block; text-align: center;
+        .filter-btn {
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;
+            color: var(--text-light); opacity: 0.4;
+            transition: var(--transition-smooth);
+            background: transparent; border: none; cursor: pointer;
+            padding-bottom: 4px; border-bottom: 1px solid transparent;
         }
-        .masonry-item:hover .try-look-btn { transform: translateY(0); opacity: 1; transition-delay: 0.1s; }
-        .try-look-btn:hover { box-shadow: 0 0 30px rgba(0,242,254,0.6); scale: 1.05; color: white; }
+        .filter-btn:hover, .filter-btn.active {
+            opacity: 1; color: var(--gold); border-bottom: 1px solid var(--gold);
+        }
 
-        .item-icons {
-            display: flex; gap: 0.5rem;
-            transform: translateY(-20px); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        /* VTON Modal */
+        #vton-modal {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(26,26,26,0.95);
+            backdrop-filter: blur(20px);
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column;
         }
-        .masonry-item:hover .item-icons { transform: translateY(0); opacity: 1; transition-delay: 0.1s; }
-        
-        .icon-circle {
-            width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            display: flex; align-items: center; justify-content: center; font-size: 14px;
+        #vton-modal.active { display: flex; }
+        .modal-mirror {
+            width: 420px; height: 630px;
+            border: 1px solid var(--gold);
+            position: relative; overflow: hidden;
+            box-shadow: var(--shadow-gold);
         }
     </style>
 </head>
 <body class="antialiased">
-    <div class="mesh-bg"></div>
-    <div class="custom-cursor" id="cursor-dot"></div>
-    <div class="cursor-ring" id="cursor-ring"></div>
 
-    <nav class="fixed w-full top-0 z-50 glass border-b-0 border-white/10 px-8 py-4 flex justify-between items-center transition-all duration-300">
-        <a href="index.html" class="text-2xl font-bold tracking-widest">AUЯA<span class="text-[#00f2fe]">.</span></a>
-        <div class="space-x-4">
-            <a href="dashboard.html" class="text-sm font-medium text-gray-300 hover:text-white transition">Dashboard</a>
-            <a href="ai-stylist.html" class="text-sm font-medium text-gray-300 hover:text-white transition">AI Stylist</a>
-            <a href="fitting-room.html" class="text-sm font-medium text-gray-300 hover:text-white transition">Fitting Room</a>
+    <header id="main-header" class="scrolled">
+        <a href="index.html" class="logo">OUTFIT<span>®</span></a>
+        <div class="nav-links ml-auto mr-12">
+            <a href="fitting-room.html">Mirror</a>
+            <a href="ai-stylist.html">Stylist</a>
+            <a href="dashboard.html">Matrix</a>
         </div>
-    </nav>
+        <a href="index.html" class="gold-link">Home</a>
+    </header>
 
-    <main class="pt-28 pb-20 px-6 max-w-[1600px] mx-auto">
-        <div class="text-center mb-10 gsap-fade-up">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4">Runway <span class="serif italic">Community.</span></h1>
-            <p class="text-gray-400">Explore community generated looks and try them on instantly.</p>
+    <!-- VTON Modal -->
+    <div id="vton-modal">
+        <div class="modal-mirror" id="modal-mirror">
+            <div class="scan-line"></div>
+            <img id="modal-result" class="w-full h-full object-cover hidden">
+            <div id="modal-loading" class="absolute inset-0 flex flex-col items-center justify-center">
+                <div class="scan-line"></div>
+                <p class="status-text mt-40 text-center px-8">Crafting your bespoke digital fit...</p>
+            </div>
+        </div>
+        <button id="close-modal" class="gold-link mt-8">Close Mirror</button>
+    </div>
+
+    <main class="pt-40 pb-20 px-8 max-w-[1600px] mx-auto">
+        <div class="text-center mb-20 gsap-fade-up">
+            <p class="text-[10px] uppercase tracking-[0.5em] text-[#D4AF37] mb-6">Style3D Catwalk</p>
+            <h1 class="text-6xl md:text-8xl font-bold mb-6 serif">The <span class="italic text-[#D4AF37]">Archive.</span></h1>
+            <p class="text-white/30 uppercase tracking-[0.2em] text-xs">Curated global aesthetics — click any look to dress your avatar</p>
         </div>
 
-        <!-- Filter Menu -->
-        <div class="flex overflow-x-auto filter-scroll gap-4 pb-4 mb-10 justify-start md:justify-center px-4 gsap-fade-up">
-            <button class="filter-pill active" data-filter="all">All Looks</button>
-            <button class="filter-pill" data-filter="trending">Trending</button>
-            <button class="filter-pill" data-filter="cyberpunk">Cyberpunk</button>
-            <button class="filter-pill" data-filter="minimalist">Minimalist</button>
-            <button class="filter-pill" data-filter="streetwear">Streetwear</button>
+        <div class="flex flex-wrap justify-center gap-12 mb-20 gsap-fade-up">
+            <button class="filter-btn active" data-filter="all">All Archive</button>
+            <button class="filter-btn" data-filter="minimalist">Minimalist</button>
+            <button class="filter-btn" data-filter="avant">Avant-Garde</button>
+            <button class="filter-btn" data-filter="street">High Street</button>
         </div>
 
-        <!-- Masonry Grid -->
-        <div class="masonry-grid" id="runway-grid">
-            <!-- Items injected by JS -->
-        </div>
+        <div class="runway-grid" id="runway-grid"></div>
     </main>
+
+    <footer class="site-footer">
+        <p class="text-[10px] uppercase tracking-[0.5em] text-white/20">© 2026 OUTFIT® Archive</p>
+    </footer>
 
     <script>
         gsap.registerPlugin(ScrollTrigger);
 
-        // Custom Cursor
-        const dot = document.getElementById('cursor-dot');
-        const ring = document.getElementById('cursor-ring');
-        window.addEventListener('mousemove', (e) => {
-            gsap.to(dot, { x: e.clientX, y: e.clientY, duration: 0.15, ease: 'power2.out' });
-            gsap.to(ring, { x: e.clientX, y: e.clientY, duration: 0.35, ease: 'power2.out' });
-        });
-        document.querySelectorAll('a, button, .masonry-item').forEach(el => {
-            el.addEventListener('mouseenter', () => { gsap.to(dot, { scale: 1.5, duration: 0.3 }); gsap.to(ring, { scale: 1.6, opacity: 0.5, duration: 0.3 }); });
-            el.addEventListener('mouseleave', () => { gsap.to(dot, { scale: 1, duration: 0.3 }); gsap.to(ring, { scale: 1, opacity: 1, duration: 0.3 }); });
-        });
-
         const imageData = [
-            { src: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop", cat: "minimalist", icons: ["🧥", "👜"] },
-            { src: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=600&auto=format&fit=crop", cat: "trending", icons: ["👗", "👠", "🕶️"] },
-            { src: "https://images.unsplash.com/photo-1492288991661-058aa541ff43?w=600&auto=format&fit=crop", cat: "minimalist", icons: ["👕", "👖"] },
-            { src: "https://images.unsplash.com/photo-1550614000-4b95d4662d57?w=600&auto=format&fit=crop", cat: "cyberpunk", icons: ["🧥", "🕶️", "🥾"] },
-            { src: "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=600&auto=format&fit=crop", cat: "streetwear", icons: ["👕", "👟"] },
-            { src: "https://images.unsplash.com/photo-1511511450040-677116ff389e?w=600&auto=format&fit=crop", cat: "streetwear", icons: ["🧥", "👖", "👟"] },
-            { src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop", cat: "trending", icons: ["👗", "💎"] },
-            { src: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&auto=format&fit=crop", cat: "minimalist", icons: ["🧥", "👖"] },
-            { src: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&auto=format&fit=crop", cat: "minimalist", icons: ["🧥", "👔"] },
-            { src: "https://images.unsplash.com/photo-1583316174775-bd6dc0e9f298?w=600&auto=format&fit=crop", cat: "cyberpunk", icons: ["🧥", "👖", "🥾"] },
-            { src: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop", cat: "trending", icons: ["🧥", "👢"] },
-            { src: "https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=600&auto=format&fit=crop", cat: "streetwear", icons: ["👕", "🧢"] }
+            { src: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&auto=format&fit=crop", cat: "minimalist" },
+            { src: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=800&auto=format&fit=crop", cat: "avant" },
+            { src: "https://images.unsplash.com/photo-1492288991661-058aa541ff43?w=800&auto=format&fit=crop", cat: "minimalist" },
+            { src: "https://images.unsplash.com/photo-1550614000-4b95d4662d57?w=800&auto=format&fit=crop", cat: "street" },
+            { src: "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=800&auto=format&fit=crop", cat: "street" },
+            { src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop", cat: "avant" },
+            { src: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&auto=format&fit=crop", cat: "minimalist" },
+            { src: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800&auto=format&fit=crop", cat: "minimalist" }
         ];
 
         const grid = document.getElementById('runway-grid');
+        const modal = document.getElementById('vton-modal');
+        const modalResult = document.getElementById('modal-result');
+        const modalLoading = document.getElementById('modal-loading');
 
         function renderGrid(filter = 'all') {
             grid.innerHTML = '';
-            let filtered = imageData;
-            if (filter !== 'all') {
-                filtered = imageData.filter(img => img.cat === filter);
-            }
+            let filtered = filter === 'all' ? imageData : imageData.filter(i => i.cat === filter);
 
-            filtered.forEach((item, i) => {
+            filtered.forEach(item => {
                 const el = document.createElement('div');
-                el.className = 'masonry-item gsap-grid-item opacity-0 translate-y-10';
-                
-                let iconsHtml = item.icons.map(ic => `<div class="icon-circle">${ic}</div>`).join('');
-                
+                el.className = 'runway-item gsap-grid-item opacity-0 translate-y-12';
                 el.innerHTML = `
-                    <img src="${item.src}" alt="Fashion Look" loading="lazy">
+                    <img src="${item.src}" loading="lazy" alt="Fashion look">
                     <div class="item-overlay">
-                        <div class="item-icons">
-                            ${iconsHtml}
-                        </div>
-                        <div class="flex justify-center w-full pb-4">
-                            <a href="fitting-room.html" class="try-look-btn cursor-none">✨ Try this Look</a>
-                        </div>
+                        <button class="btn-gold !bg-black/60 backdrop-blur-sm try-on-btn" data-src="${item.src}">Drape This Look</button>
                     </div>
                 `;
                 grid.appendChild(el);
             });
 
-            // Re-bind cursor events for new elements
-            document.querySelectorAll('.masonry-item').forEach(el => {
-                el.addEventListener('mouseenter', () => { gsap.to(dot, { scale: 1.5, duration: 0.3 }); gsap.to(ring, { scale: 1.6, opacity: 0.5, duration: 0.3 }); });
-                el.addEventListener('mouseleave', () => { gsap.to(dot, { scale: 1, duration: 0.3 }); gsap.to(ring, { scale: 1, opacity: 1, duration: 0.3 }); });
-            });
+            gsap.to(".gsap-grid-item", { opacity: 1, y: 0, stagger: 0.08, duration: 1, ease: "power3.out" });
 
-            // Entry Animations
-            ScrollTrigger.batch(".gsap-grid-item", {
-                onEnter: batch => gsap.to(batch, { opacity: 1, y: 0, stagger: 0.1, duration: 0.8, ease: "power3.out" }),
-                once: true
+            // Attach VTON handlers
+            document.querySelectorAll('.try-on-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    tryOnFromRunway(btn.dataset.src);
+                });
             });
-            ScrollTrigger.refresh();
         }
 
-        renderGrid();
+        // VTON from Runway
+        async function tryOnFromRunway(garmentUrl) {
+            const userImage = localStorage.getItem('aura_face_scan');
+            if (!userImage) {
+                alert("Please upload your portrait first via the Mirror or Home page scanner.");
+                return;
+            }
 
-        // Filtering Logic
-        document.querySelectorAll('.filter-pill').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                renderGrid(e.target.getAttribute('data-filter'));
+            modal.classList.add('active');
+            modalResult.classList.add('hidden');
+            modalLoading.style.display = 'flex';
+
+            try {
+                const response = await fetch('http://localhost:3000/api/try-on', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userImage, garmentImage: garmentUrl })
+                });
+                const data = await response.json();
+
+                if (data.imageUrl) {
+                    modalResult.src = data.imageUrl;
+                    modalResult.classList.remove('hidden');
+                    modalLoading.style.display = 'none';
+                }
+            } catch (err) {
+                console.error("Runway VTON failed:", err);
+                modalLoading.innerHTML = '<p class="status-text">Mirror temporarily unavailable.</p>';
+            }
+        }
+
+        document.getElementById('close-modal').onclick = () => {
+            modal.classList.remove('active');
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.add('loaded');
+            renderGrid();
+            gsap.from(".gsap-fade-up", { y: 40, opacity: 0, duration: 1.5, stagger: 0.2, ease: "power4.out" });
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    renderGrid(e.target.dataset.filter);
+                });
             });
         });
-
-        // Header Animations
-        gsap.from(".gsap-fade-up", { y: 30, opacity: 0, duration: 1, stagger: 0.2, ease: "power3.out" });
-
     </script>
 </body>
 </html>

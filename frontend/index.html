@@ -3,473 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AUЯA | AI Fashion Stylist</title>
+    <title>AUЯA® | Digital Atelier</title>
+    <meta name="description" content="High-fidelity virtual try-on and neural style curation for the modern silhouette. Powered by AI.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.umd.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --neon-cyan: #00f2fe;
-            --neon-violet: #8a2be2;
-        }
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #030303; 
-            color: #ffffff; 
-            overflow-x: hidden; 
-        }
-        h1, h2, h3, .serif { font-family: 'Playfair Display', serif; }
-        
-        /* Glassmorphism */
-        .glass { 
-            background: rgba(255, 255, 255, 0.03); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-        }
-        
-        /* Text Gradients */
-        .text-gradient { 
-            background: linear-gradient(to right, var(--neon-cyan) 0%, var(--neon-violet) 100%); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
-        }
-
-        /* Animated Mesh Background */
-        .mesh-bg { 
-            position: fixed; 
-            top: -50%; left: -50%; 
-            width: 200%; height: 200%; 
-            background: 
-                radial-gradient(circle at 50% 50%, rgba(0, 242, 254, 0.08), transparent 50%), 
-                radial-gradient(circle at 80% 20%, rgba(138, 43, 226, 0.08), transparent 50%); 
-            z-index: -1; 
-            animation: rotateBg 40s linear infinite; 
-        }
-        @keyframes rotateBg { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* AI Scanner Animation */
-        .scan-line { 
-            width: 100%; height: 2px; 
-            background: var(--neon-cyan); 
-            box-shadow: 0 0 15px var(--neon-cyan), 0 0 30px var(--neon-cyan); 
-            position: absolute; top: 0; left: 0; 
-            animation: scan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate; 
-            z-index: 10;
-        }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-
-        /* Custom UI behaviors */
-        .card-hover { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .card-hover:hover { 
-            transform: translateY(-10px); 
-            border-color: rgba(0, 242, 254, 0.3);
-            box-shadow: 0 10px 30px -10px rgba(0, 242, 254, 0.2);
-        }
-
-        /* Custom Cursor */
-        * { cursor: none !important; }
-        .custom-cursor {
-            position: fixed; top: 0; left: 0; width: 16px; height: 16px;
-            border-radius: 50%; pointer-events: none; z-index: 9999;
-            background: var(--neon-cyan);
-            box-shadow: 0 0 12px var(--neon-cyan), 0 0 30px var(--neon-cyan);
-            mix-blend-mode: screen;
-            transform: translate(-50%, -50%);
-        }
-        .cursor-ring {
-            position: fixed; top: 0; left: 0; width: 40px; height: 40px;
-            border-radius: 50%; pointer-events: none; z-index: 9998;
-            border: 1px solid rgba(255,255,255,0.15);
-            transform: translate(-50%, -50%);
-        }
-
-        /* Theme Swatches */
-        .theme-swatch {
-            width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2);
-            transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
-        }
-        .theme-swatch:hover { transform: scale(1.3); border-color: #fff; }
-        .theme-swatch.active { border-color: #fff; box-shadow: 0 0 10px currentColor; }
-
-        /* Draggable Cards */
-        .drag-card {
-            touch-action: none; user-select: none;
-            transition: box-shadow 0.3s;
-        }
-        .drag-card.dragging {
-            box-shadow: 0 0 40px rgba(0,242,254,0.3);
-            z-index: 100;
-        }
-
-        /* Marquee */
-        .marquee-wrap { overflow: hidden; width: 100%; }
-        .marquee-track {
-            display: flex; gap: 2rem; width: max-content;
-            animation: marquee 30s linear infinite;
-        }
-        .marquee-wrap:hover .marquee-track { animation-play-state: paused; }
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-    </style>
+    <link rel="stylesheet" href="global.css">
 </head>
 <body class="antialiased">
 
-    <div class="mesh-bg"></div>
-
-    <!-- Custom Cursor -->
-    <div class="custom-cursor" id="cursor-dot"></div>
-    <div class="cursor-ring" id="cursor-ring"></div>
-
-    <nav class="fixed w-full top-0 z-50 glass border-b-0 border-white/10 px-8 py-4 flex justify-between items-center transition-all duration-300">
-        <div class="text-2xl font-bold tracking-widest">AUЯA<span class="text-[#00f2fe]">.</span></div>
-        <div class="space-x-6 hidden md:flex items-center">
-            <a href="ai-stylist.html" class="text-sm text-gray-300 hover:text-white transition">AI Stylist</a>
-            <a href="runway.html" class="text-sm text-gray-300 hover:text-white transition">Runway</a>
-            <a href="#" class="text-sm text-gray-300 hover:text-white transition">How it Works</a>
-            <span class="text-gray-600 mx-1">|</span>
-            <div class="flex gap-2 items-center" id="theme-picker">
-                <button class="theme-swatch active" data-cyan="#00f2fe" data-violet="#8a2be2" style="background: linear-gradient(135deg, #00f2fe, #8a2be2)" title="Cyan / Violet"></button>
-                <button class="theme-swatch" data-cyan="#f857a6" data-violet="#ff5858" style="background: linear-gradient(135deg, #f857a6, #ff5858)" title="Rose / Coral"></button>
-                <button class="theme-swatch" data-cyan="#43e97b" data-violet="#38f9d7" style="background: linear-gradient(135deg, #43e97b, #38f9d7)" title="Emerald / Mint"></button>
-            </div>
+    <header id="main-header">
+        <a href="index.html" class="logo">AUЯA<span>®</span></a>
+        <div class="nav-links ml-auto mr-12">
+            <a href="#men">Men</a>
+            <a href="#women">Women</a>
+            <a href="#junior">Kids</a>
         </div>
-        <div class="space-x-4">
-            <button class="text-sm font-medium hover:text-[#00f2fe] transition">Login</button>
-            <button class="bg-white text-black px-5 py-2 rounded-full text-sm font-semibold hover:scale-105 transition duration-300 shadow-[0_0_15px_rgba(255,255,255,0.3)]">Sign Up</button>
-        </div>
-    </nav>
+        <a href="dashboard.html" class="gold-link">Dashboard</a>
+    </header>
 
-    <section class="min-h-screen flex flex-col justify-center items-center text-center px-4 pt-20 relative">
-        <div class="gsap-hero opacity-0 translate-y-10">
-            <div class="inline-block glass px-4 py-1 rounded-full text-xs font-semibold tracking-wider text-gray-300 mb-6 border-white/20">
-                ✨ THE FUTURE OF FASHION
-            </div>
-            <h1 class="text-6xl md:text-8xl font-bold leading-tight mb-6">
-                Your Personal <br> <span class="text-gradient">AI Stylist.</span>
+    <!-- ═══ HERO ═══ -->
+    <section class="min-h-screen flex items-center justify-center relative px-8">
+        <div class="absolute inset-0 z-0 opacity-[0.04] flex items-center justify-center pointer-events-none select-none">
+            <h1 class="text-[22vw] font-bold text-white whitespace-nowrap">AUЯA</h1>
+        </div>
+
+        <div class="max-w-5xl z-10 text-center gsap-hero opacity-0 translate-y-12">
+            <h1 class="text-7xl md:text-9xl font-bold mb-12 serif leading-tight">
+                Crafting Your <br> <span class="italic text-[#D4AF37]">Digital Identity.</span>
             </h1>
-            <p class="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-10">
-                Upload a photo. Let our neural engine map your body structure, analyze your skin tone, and curate high-end outfits perfectly tailored to you.
+            <p class="text-white/40 text-lg md:text-xl max-w-2xl mx-auto mb-16 leading-relaxed uppercase tracking-widest">
+                High-fidelity virtual try-on and neural style curation for the modern silhouette.
             </p>
-            <div class="flex gap-4 justify-center">
-                <button class="bg-gradient-to-r from-[#00f2fe] to-[#4facfe] text-black px-8 py-4 rounded-full font-bold text-lg hover:shadow-[0_0_30px_rgba(0,242,254,0.4)] hover:scale-105 transition-all duration-300">
-                    Try the AI Demo
-                </button>
-                <button class="glass px-8 py-4 rounded-full font-bold text-lg hover:bg-white/10 transition-all duration-300">
-                    Watch Video
-                </button>
+            <div class="flex flex-col md:flex-row items-center justify-center gap-12">
+                <a href="fitting-room.html" class="btn-gold">Enter the Mirror</a>
+                <a href="#scanner" class="gold-link">Biometric Scan</a>
             </div>
         </div>
     </section>
 
-    <!-- Biometric Scanner Form -->
-    <section class="py-24 px-6 max-w-5xl mx-auto" id="scanner">
-        <div class="text-center mb-16 gsap-fade-up">
-            <h2 class="text-4xl md:text-5xl font-bold mb-4">Biometric <span class="serif italic font-normal">Scanner.</span></h2>
-            <p class="text-gray-400 text-lg max-w-2xl mx-auto">Our AI scans 120 focal points on your face and body to recommend silhouettes and colors that elevate your natural aesthetics.</p>
-        </div>
-
-        <!-- Face & Body Analyzer Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 gsap-fade-up">
-            <!-- Face Analyzer -->
-            <div class="glass rounded-2xl p-8 text-center relative overflow-hidden group">
-                <div class="scan-line opacity-30"></div>
-                <div class="text-5xl mb-4">🧑</div>
-                <h3 class="text-xl font-bold mb-2">Face Analyzer</h3>
-                <p class="text-sm text-gray-400 mb-6">Detect face shape, skin undertone & ideal color palette.</p>
-                <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                    <button class="cam-btn relative px-6 py-3 rounded-full text-sm font-semibold border border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(0,242,254,0.4)] hover:bg-[color:var(--neon-cyan)]/10">
-                        📷 Open Web Camera
-                    </button>
-                    <button class="px-6 py-3 rounded-full text-sm font-semibold glass hover:bg-white/10 transition-all duration-300">
-                        📁 Upload Photo
-                    </button>
-                </div>
-                <!-- Camera preview placeholder -->
-                <div class="cam-preview hidden mt-6 rounded-xl overflow-hidden border border-white/10 aspect-video bg-black/40 flex items-center justify-center">
-                    <video class="cam-video w-full h-full object-cover" autoplay playsinline muted></video>
-                </div>
+    <!-- ═══ MEN'S SECTION ═══ -->
+    <section class="py-32 px-8" id="men">
+        <div class="max-w-6xl mx-auto gsap-fade-up">
+            <div class="text-center mb-20">
+                <p class="text-[10px] uppercase tracking-[0.5em] text-[#D4AF37] mb-6">Curated Selection</p>
+                <h2 class="text-5xl md:text-7xl font-bold serif">AUЯA<span class="text-[#D4AF37]">®</span> <span class="italic">Homme</span></h2>
             </div>
-
-            <!-- Body Analyzer -->
-            <div class="glass rounded-2xl p-8 text-center relative overflow-hidden group">
-                <div class="scan-line opacity-30"></div>
-                <div class="text-5xl mb-4">🕴️</div>
-                <h3 class="text-xl font-bold mb-2">Body Analyzer</h3>
-                <p class="text-sm text-gray-400 mb-6">Map body proportions for ideal silhouettes & fit.</p>
-                <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                    <button class="cam-btn relative px-6 py-3 rounded-full text-sm font-semibold border border-[color:var(--neon-violet)] text-[color:var(--neon-violet)] transition-all duration-300 hover:shadow-[0_0_25px_rgba(138,43,226,0.4)] hover:bg-[color:var(--neon-violet)]/10">
-                        📷 Open Web Camera
-                    </button>
-                    <button class="px-6 py-3 rounded-full text-sm font-semibold glass hover:bg-white/10 transition-all duration-300">
-                        📁 Upload Photo
-                    </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="p-10 border border-[#D4AF37]/20 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-500 hover:border-[#D4AF37]/50">
+                    <h3 class="text-3xl font-bold serif mb-4">Tailored Classics</h3>
+                    <p class="text-white/40 text-sm leading-relaxed mb-8">Precision cuts and structured silhouettes designed to elevate your personal style geometry.</p>
+                    <a href="fitting-room.html?gender=male" class="gold-link inline-block">Enter Mirror →</a>
                 </div>
-                <div class="cam-preview hidden mt-6 rounded-xl overflow-hidden border border-white/10 aspect-video bg-black/40 flex items-center justify-center">
-                    <video class="cam-video w-full h-full object-cover" autoplay playsinline muted></video>
-                </div>
-            </div>
-        </div>
-
-        <!-- Metrics Inputs -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 gsap-fade-up">
-            <div class="relative">
-                <input type="text" id="height-input" placeholder="Height (cm or ft)" class="w-full bg-transparent border-b-2 border-gray-700 focus:border-[color:var(--neon-cyan)] py-4 px-2 text-lg text-white outline-none transition-colors duration-300 placeholder-gray-600">
-                <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-gradient-to-r from-[color:var(--neon-cyan)] to-[color:var(--neon-violet)] transition-all duration-500" id="height-glow"></div>
-            </div>
-            <div class="relative">
-                <input type="text" id="weight-input" placeholder="Weight (kg or lbs)" class="w-full bg-transparent border-b-2 border-gray-700 focus:border-[color:var(--neon-violet)] py-4 px-2 text-lg text-white outline-none transition-colors duration-300 placeholder-gray-600">
-                <div class="absolute bottom-0 left-0 w-0 h-[2px] bg-gradient-to-r from-[color:var(--neon-violet)] to-[color:var(--neon-cyan)] transition-all duration-500" id="weight-glow"></div>
-            </div>
-        </div>
-
-        <!-- CTA Button -->
-        <div class="text-center gsap-fade-up">
-            <button id="generate-btn" class="inline-block bg-gradient-to-r from-[#00f2fe] to-[#8a2be2] text-white px-12 py-5 rounded-full font-bold text-xl hover:shadow-[0_0_40px_rgba(0,242,254,0.4),0_0_80px_rgba(138,43,226,0.2)] hover:scale-105 transition-all duration-400 tracking-wide">
-                ✨ Generate My Style Matrix
-            </button>
-        </div>
-    </section>
-
-    <section class="py-24 px-6 max-w-7xl mx-auto">
-        <div class="text-center mb-16 gsap-fade-up">
-            <h2 class="text-4xl md:text-5xl font-bold mb-4">Curated for <span class="serif italic">You.</span></h2>
-            <p class="text-gray-400">Select a category to see AI-generated lookbooks.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[600px] gsap-bento">
-            <div class="glass rounded-3xl p-6 flex flex-col justify-end relative overflow-hidden group card-hover h-[400px] md:h-full">
-                <img src="https://images.unsplash.com/photo-1617137968427-85924c800a22?q=80&w=800&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 group-hover:scale-105 transition duration-700">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                <div class="relative z-10">
-                    <h3 class="text-3xl font-bold mb-2">Menswear</h3>
-                    <p class="text-gray-300 text-sm mb-4">From streetwear to bespoke tailoring.</p>
-                    <button class="bg-white/10 hover:bg-white text-white hover:text-black px-6 py-2 rounded-full text-sm font-semibold backdrop-blur-md transition">Explore</button>
-                </div>
-            </div>
-
-            <div class="glass rounded-3xl p-6 flex flex-col justify-end relative overflow-hidden group card-hover md:col-span-2 h-[400px] md:h-full">
-                <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 group-hover:scale-105 transition duration-700">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                <div class="relative z-10">
-                    <h3 class="text-4xl font-bold mb-2">Womenswear</h3>
-                    <p class="text-gray-300 text-sm mb-4 max-w-sm">Elevate your daily rotation with AI-curated palettes, seasonal trends, and statement accessories.</p>
-                    <button class="bg-white/10 hover:bg-white text-white hover:text-black px-6 py-2 rounded-full text-sm font-semibold backdrop-blur-md transition">Explore</button>
+                <div class="p-10 border border-[#D4AF37]/20 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-500 hover:border-[#D4AF37]/50">
+                    <h3 class="text-3xl font-bold serif mb-4">Elevated Casual</h3>
+                    <p class="text-white/40 text-sm leading-relaxed mb-8">Refined everyday wear combining comfort with sharp, modern aesthetics.</p>
+                    <a href="fitting-room.html?gender=male" class="gold-link inline-block">Enter Mirror →</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Style Canvas - Drag & Drop -->
-    <section class="py-24 px-6 max-w-7xl mx-auto" id="style-canvas">
-        <div class="text-center mb-16 gsap-fade-up">
-            <h2 class="text-4xl md:text-5xl font-bold mb-4">Style <span class="serif italic">Canvas.</span></h2>
-            <p class="text-gray-400">Drag items around to mix &amp; match your look.</p>
-        </div>
-        <div class="relative min-h-[420px] glass rounded-3xl p-8 overflow-hidden" id="canvas-area">
-            <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px); background-size: 30px 30px;"></div>
-            <div class="flex flex-wrap gap-6 justify-center" id="drag-container">
-                <div class="drag-card glass rounded-2xl p-5 w-52 flex-shrink-0">
-                    <div class="text-4xl mb-3">🧥</div>
-                    <h4 class="font-bold text-lg mb-1">Urban Jacket</h4>
-                    <p class="text-xs text-gray-400">Oversized silhouette, matte finish</p>
-                    <span class="inline-block mt-3 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full" style="background: rgba(var(--neon-cyan-rgb, 0,242,254), 0.15); color: var(--neon-cyan);">Outerwear</span>
+    <!-- ═══ WOMEN'S SECTION ═══ -->
+    <section class="py-32 px-8 bg-white text-[#1A1A1A]" id="women">
+        <div class="max-w-6xl mx-auto gsap-fade-up">
+            <div class="text-center mb-20">
+                <p class="text-[10px] uppercase tracking-[0.5em] text-[#D4AF37] mb-6">Curated Selection</p>
+                <h2 class="text-5xl md:text-7xl font-bold serif text-[#1A1A1A]">AUЯA<span class="text-[#D4AF37]">®</span> <span class="italic">Femme</span></h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="luxury-panel bg-white border border-[#1A1A1A]/10 hover:border-[#D4AF37]/50 transition-all duration-500">
+                    <h3 class="text-3xl font-bold serif mb-4 text-[#1A1A1A]">Fluid Elegance</h3>
+                    <p class="text-[#1A1A1A]/50 text-sm leading-relaxed mb-8">Soft draping and elegant lines that complement and move with your natural frame.</p>
+                    <a href="fitting-room.html?gender=female" class="gold-link !border-[#1A1A1A] !text-[#1A1A1A] hover:!text-[#D4AF37] hover:!border-[#D4AF37] inline-block">Enter Mirror →</a>
                 </div>
-                <div class="drag-card glass rounded-2xl p-5 w-52 flex-shrink-0">
-                    <div class="text-4xl mb-3">👟</div>
-                    <h4 class="font-bold text-lg mb-1">Classic Sneakers</h4>
-                    <p class="text-xs text-gray-400">Retro runner, premium suede</p>
-                    <span class="inline-block mt-3 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full" style="background: rgba(138,43,226,0.15); color: var(--neon-violet);">Footwear</span>
-                </div>
-                <div class="drag-card glass rounded-2xl p-5 w-52 flex-shrink-0">
-                    <div class="text-4xl mb-3">👖</div>
-                    <h4 class="font-bold text-lg mb-1">Slim Trousers</h4>
-                    <p class="text-xs text-gray-400">Tailored fit, stretch wool blend</p>
-                    <span class="inline-block mt-3 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full" style="background: rgba(var(--neon-cyan-rgb, 0,242,254), 0.15); color: var(--neon-cyan);">Bottoms</span>
-                </div>
-                <div class="drag-card glass rounded-2xl p-5 w-52 flex-shrink-0">
-                    <div class="text-4xl mb-3">🕶️</div>
-                    <h4 class="font-bold text-lg mb-1">Aviator Shades</h4>
-                    <p class="text-xs text-gray-400">Titanium frame, UV-400 lens</p>
-                    <span class="inline-block mt-3 text-[10px] uppercase tracking-widest px-2 py-1 rounded-full" style="background: rgba(138,43,226,0.15); color: var(--neon-violet);">Accessories</span>
+                <div class="luxury-panel bg-white border border-[#1A1A1A]/10 hover:border-[#D4AF37]/50 transition-all duration-500">
+                    <h3 class="text-3xl font-bold serif mb-4 text-[#1A1A1A]">Avant-Garde</h3>
+                    <p class="text-[#1A1A1A]/50 text-sm leading-relaxed mb-8">Bold statement pieces and progressive styling for the modern archetype.</p>
+                    <a href="fitting-room.html?gender=female" class="gold-link !border-[#1A1A1A] !text-[#1A1A1A] hover:!text-[#D4AF37] hover:!border-[#D4AF37] inline-block">Enter Mirror →</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Testimonial Marquee -->
-    <section class="py-16 gsap-fade-up">
-        <div class="text-center mb-10">
-            <h2 class="text-3xl font-bold mb-2">Loved by <span class="text-gradient">thousands.</span></h2>
-        </div>
-        <div class="marquee-wrap">
-            <div class="marquee-track">
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"AUЯA completely changed how I shop. It's like having a stylist in my pocket."</p><p class="text-xs text-gray-500">— Priya M., NYC</p></div>
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"The color matching is insane. Every recommendation feels effortless."</p><p class="text-xs text-gray-500">— Jake T., London</p></div>
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"I never knew what 'Deep Winter' meant until AUЯA. Now I get compliments daily."</p><p class="text-xs text-gray-500">— Aria S., Tokyo</p></div>
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"Saved me hours of browsing. The AI just gets me."</p><p class="text-xs text-gray-500">— Marcus K., Berlin</p></div>
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"Finally, tech that understands fashion."</p><p class="text-xs text-gray-500">— Lena C., Paris</p></div>
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"Dropped my personal shopper after one week with AUЯA."</p><p class="text-xs text-gray-500">— Daniel R., LA</p></div>
-                <!-- Duplicate for seamless loop -->
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"AUЯA completely changed how I shop. It's like having a stylist in my pocket."</p><p class="text-xs text-gray-500">— Priya M., NYC</p></div>
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"The color matching is insane. Every recommendation feels effortless."</p><p class="text-xs text-gray-500">— Jake T., London</p></div>
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"I never knew what 'Deep Winter' meant until AUЯA. Now I get compliments daily."</p><p class="text-xs text-gray-500">— Aria S., Tokyo</p></div>
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"Saved me hours of browsing. The AI just gets me."</p><p class="text-xs text-gray-500">— Marcus K., Berlin</p></div>
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"Finally, tech that understands fashion."</p><p class="text-xs text-gray-500">— Lena C., Paris</p></div>
-                <div class="glass rounded-2xl px-8 py-5 min-w-[340px] flex-shrink-0"><p class="text-sm text-gray-300 italic mb-2">"Dropped my personal shopper after one week with AUЯA."</p><p class="text-xs text-gray-500">— Daniel R., LA</p></div>
+    <!-- ═══ BIOMETRIC SCANNER ═══ -->
+    <section class="py-32 px-8 bg-white text-[#1A1A1A]" id="scanner">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-24 gsap-fade-up">
+                <div class="max-w-2xl">
+                    <h2 class="text-5xl md:text-6xl font-bold mb-8 serif text-[#1A1A1A]">The <span class="italic text-[#D4AF37]">Mirror</span> doesn't lie.</h2>
+                    <p class="text-[#1A1A1A]/50 text-lg uppercase tracking-wider">Our AI maps your body proportions to ensure every digital fit is tailored specifically to your biometric profile.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-16 mb-24 gsap-fade-up">
+                <div class="luxury-panel" id="portrait-panel">
+                    <h3 class="text-3xl font-bold mb-6 serif text-[#1A1A1A]">Portrait Analysis</h3>
+                    <p class="text-sm text-[#1A1A1A]/50 mb-12">Detect skin undertones and facial structure for precise color matching.</p>
+                    <div id="scan-preview" class="hidden mb-6">
+                        <img id="scan-image" class="w-full max-h-48 object-cover border border-[#D4AF37]/30">
+                        <p id="scan-status" class="text-xs mt-3 text-[#D4AF37] uppercase tracking-widest">Processing scan...</p>
+                    </div>
+                    <label class="gold-link cursor-pointer !border-[#1A1A1A] !text-[#1A1A1A] hover:!text-[#D4AF37] hover:!border-[#D4AF37]">
+                        Upload Scan
+                        <input type="file" id="face-scan-input" class="hidden" accept="image/*">
+                    </label>
+                </div>
+                <div class="luxury-panel" id="frame-panel">
+                    <h3 class="text-3xl font-bold mb-6 serif text-[#1A1A1A]">Frame Mapping</h3>
+                    <p class="text-sm text-[#1A1A1A]/50 mb-12">Calculate height, weight, and limb proportions for silhouette accuracy.</p>
+                    <div class="flex gap-8 mb-8">
+                        <input type="number" id="height-val" placeholder="Height (cm)" class="w-full border-b border-black/20 bg-transparent outline-none py-2 text-sm focus:border-[#D4AF37] text-[#1A1A1A]">
+                        <input type="number" id="weight-val" placeholder="Weight (kg)" class="w-full border-b border-black/20 bg-transparent outline-none py-2 text-sm focus:border-[#D4AF37] text-[#1A1A1A]">
+                    </div>
+                    <button id="save-metrics" class="gold-link !border-[#1A1A1A] !text-[#1A1A1A] hover:!text-[#D4AF37] hover:!border-[#D4AF37]">Save Profile</button>
+                </div>
             </div>
         </div>
     </section>
 
-    <footer class="glass border-t border-white/10 mt-20 py-12 text-center text-gray-500 text-sm">
-        <div class="text-2xl font-bold tracking-widest text-white mb-4">AUЯA<span class="text-[#00f2fe]">.</span></div>
-        <p>© 2026 Aura AI Styling Platform. Frontend UI Build.</p>
+    <!-- ═══ MEN'S SECTION ═══ -->
+    <section class="py-32 px-8" id="men">
+        <div class="max-w-6xl mx-auto gsap-fade-up">
+            <div class="text-center mb-20">
+                <p class="text-[10px] uppercase tracking-[0.5em] text-[#D4AF37] mb-6">Curated Selection</p>
+                <h2 class="text-5xl md:text-7xl font-bold serif">AUЯA<span class="text-[#D4AF37]">®</span> <span class="italic">Homme</span></h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="p-10 border border-[#D4AF37]/20 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-500 hover:border-[#D4AF37]/50">
+                    <h3 class="text-3xl font-bold serif mb-4">Tailored Classics</h3>
+                    <p class="text-white/40 text-sm leading-relaxed mb-8">Precision cuts and structured silhouettes designed to elevate your personal style geometry.</p>
+                    <a href="fitting-room.html?gender=male" class="gold-link inline-block">Enter Mirror →</a>
+                </div>
+                <div class="p-10 border border-[#D4AF37]/20 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-500 hover:border-[#D4AF37]/50">
+                    <h3 class="text-3xl font-bold serif mb-4">Elevated Casual</h3>
+                    <p class="text-white/40 text-sm leading-relaxed mb-8">Refined everyday wear combining comfort with sharp, modern aesthetics.</p>
+                    <a href="fitting-room.html?gender=male" class="gold-link inline-block">Enter Mirror →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ WOMEN'S SECTION ═══ -->
+    <section class="py-32 px-8 bg-white text-[#1A1A1A]" id="women">
+        <div class="max-w-6xl mx-auto gsap-fade-up">
+            <div class="text-center mb-20">
+                <p class="text-[10px] uppercase tracking-[0.5em] text-[#D4AF37] mb-6">Curated Selection</p>
+                <h2 class="text-5xl md:text-7xl font-bold serif text-[#1A1A1A]">AUЯA<span class="text-[#D4AF37]">®</span> <span class="italic">Femme</span></h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="luxury-panel bg-white border border-[#1A1A1A]/10 hover:border-[#D4AF37]/50 transition-all duration-500">
+                    <h3 class="text-3xl font-bold serif mb-4 text-[#1A1A1A]">Fluid Elegance</h3>
+                    <p class="text-[#1A1A1A]/50 text-sm leading-relaxed mb-8">Soft draping and elegant lines that complement and move with your natural frame.</p>
+                    <a href="fitting-room.html?gender=female" class="gold-link !border-[#1A1A1A] !text-[#1A1A1A] hover:!text-[#D4AF37] hover:!border-[#D4AF37] inline-block">Enter Mirror →</a>
+                </div>
+                <div class="luxury-panel bg-white border border-[#1A1A1A]/10 hover:border-[#D4AF37]/50 transition-all duration-500">
+                    <h3 class="text-3xl font-bold serif mb-4 text-[#1A1A1A]">Avant-Garde</h3>
+                    <p class="text-[#1A1A1A]/50 text-sm leading-relaxed mb-8">Bold statement pieces and progressive styling for the modern archetype.</p>
+                    <a href="fitting-room.html?gender=female" class="gold-link !border-[#1A1A1A] !text-[#1A1A1A] hover:!text-[#D4AF37] hover:!border-[#D4AF37] inline-block">Enter Mirror →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ AUЯA JUNIOR (Kids Section) ═══ -->
+    <section class="py-32 px-8" id="junior">
+        <div class="max-w-6xl mx-auto gsap-fade-up">
+            <div class="text-center mb-20">
+                <p class="text-[10px] uppercase tracking-[0.5em] text-[#D4AF37] mb-6">For the next generation</p>
+                <h2 class="text-5xl md:text-7xl font-bold serif">AUЯA<span class="text-[#D4AF37]">®</span> <span class="italic">Junior</span></h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="p-10 border border-[#D4AF37]/20 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-500 hover:border-[#D4AF37]/50 hover:-translate-y-2">
+                    <div class="text-4xl mb-6">👶</div>
+                    <h3 class="text-2xl font-bold serif mb-4">Ages 2–6</h3>
+                    <p class="text-white/40 text-sm leading-relaxed">AI-curated playful ensembles with comfort-first materials. Soft palettes and safe fabrics selected algorithmically.</p>
+                    <a href="fitting-room.html" class="gold-link inline-block mt-8">Explore →</a>
+                </div>
+                <div class="p-10 border border-[#D4AF37]/20 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-500 hover:border-[#D4AF37]/50 hover:-translate-y-2">
+                    <div class="text-4xl mb-6">🧒</div>
+                    <h3 class="text-2xl font-bold serif mb-4">Ages 7–12</h3>
+                    <p class="text-white/40 text-sm leading-relaxed">Trend-aware styles scaled for growing frames. Our biometric engine adapts fits to rapid growth patterns.</p>
+                    <a href="fitting-room.html" class="gold-link inline-block mt-8">Explore →</a>
+                </div>
+                <div class="p-10 border border-[#D4AF37]/20 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-500 hover:border-[#D4AF37]/50 hover:-translate-y-2">
+                    <div class="text-4xl mb-6">🧑‍🎤</div>
+                    <h3 class="text-2xl font-bold serif mb-4">Ages 13–17</h3>
+                    <p class="text-white/40 text-sm leading-relaxed">Full access to the Digital Mirror. Teen-specific trend analysis with guardrails for age-appropriate styling.</p>
+                    <a href="fitting-room.html" class="gold-link inline-block mt-8">Explore →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ MEN'S SECTION ═══ -->
+    <section class="py-32 px-8" id="men">
+        <div class="max-w-6xl mx-auto gsap-fade-up">
+            <div class="text-center mb-20">
+                <p class="text-[10px] uppercase tracking-[0.5em] text-[#D4AF37] mb-6">Curated Selection</p>
+                <h2 class="text-5xl md:text-7xl font-bold serif">AUЯA<span class="text-[#D4AF37]">®</span> <span class="italic">Homme</span></h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="p-10 border border-[#D4AF37]/20 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-500 hover:border-[#D4AF37]/50">
+                    <h3 class="text-3xl font-bold serif mb-4">Tailored Classics</h3>
+                    <p class="text-white/40 text-sm leading-relaxed mb-8">Precision cuts and structured silhouettes designed to elevate your personal style geometry.</p>
+                    <a href="fitting-room.html?gender=male" class="gold-link inline-block">Enter Mirror →</a>
+                </div>
+                <div class="p-10 border border-[#D4AF37]/20 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-500 hover:border-[#D4AF37]/50">
+                    <h3 class="text-3xl font-bold serif mb-4">Elevated Casual</h3>
+                    <p class="text-white/40 text-sm leading-relaxed mb-8">Refined everyday wear combining comfort with sharp, modern aesthetics.</p>
+                    <a href="fitting-room.html?gender=male" class="gold-link inline-block">Enter Mirror →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ WOMEN'S SECTION ═══ -->
+    <section class="py-32 px-8 bg-white text-[#1A1A1A]" id="women">
+        <div class="max-w-6xl mx-auto gsap-fade-up">
+            <div class="text-center mb-20">
+                <p class="text-[10px] uppercase tracking-[0.5em] text-[#D4AF37] mb-6">Curated Selection</p>
+                <h2 class="text-5xl md:text-7xl font-bold serif text-[#1A1A1A]">AUЯA<span class="text-[#D4AF37]">®</span> <span class="italic">Femme</span></h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="luxury-panel bg-white border border-[#1A1A1A]/10 hover:border-[#D4AF37]/50 transition-all duration-500">
+                    <h3 class="text-3xl font-bold serif mb-4 text-[#1A1A1A]">Fluid Elegance</h3>
+                    <p class="text-[#1A1A1A]/50 text-sm leading-relaxed mb-8">Soft draping and elegant lines that complement and move with your natural frame.</p>
+                    <a href="fitting-room.html?gender=female" class="gold-link !border-[#1A1A1A] !text-[#1A1A1A] hover:!text-[#D4AF37] hover:!border-[#D4AF37] inline-block">Enter Mirror →</a>
+                </div>
+                <div class="luxury-panel bg-white border border-[#1A1A1A]/10 hover:border-[#D4AF37]/50 transition-all duration-500">
+                    <h3 class="text-3xl font-bold serif mb-4 text-[#1A1A1A]">Avant-Garde</h3>
+                    <p class="text-[#1A1A1A]/50 text-sm leading-relaxed mb-8">Bold statement pieces and progressive styling for the modern archetype.</p>
+                    <a href="fitting-room.html?gender=female" class="gold-link !border-[#1A1A1A] !text-[#1A1A1A] hover:!text-[#D4AF37] hover:!border-[#D4AF37] inline-block">Enter Mirror →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="site-footer">
+        <div class="logo justify-center mb-8" style="display:flex;">AUЯA<span>®</span></div>
+        <div class="flex justify-center gap-8 mb-8">
+            <a href="how-it-works.html" class="text-[10px] uppercase tracking-widest text-white/30 hover:text-[#D4AF37] transition">How It Works</a>
+            <a href="runway.html" class="text-[10px] uppercase tracking-widest text-white/30 hover:text-[#D4AF37] transition">Runway</a>
+            <a href="ai-stylist.html" class="text-[10px] uppercase tracking-widest text-white/30 hover:text-[#D4AF37] transition">Stylist</a>
+        </div>
+        <p class="text-[10px] uppercase tracking-[0.5em] text-white/20">© 2026 AUЯA® Digital Atelier</p>
     </footer>
 
     <script>
-        gsap.registerPlugin(ScrollTrigger, Draggable);
+        gsap.registerPlugin(ScrollTrigger);
 
-        /* ===== CUSTOM CURSOR ===== */
-        const dot = document.getElementById('cursor-dot');
-        const ring = document.getElementById('cursor-ring');
-        window.addEventListener('mousemove', (e) => {
-            gsap.to(dot, { x: e.clientX, y: e.clientY, duration: 0.15, ease: 'power2.out' });
-            gsap.to(ring, { x: e.clientX, y: e.clientY, duration: 0.35, ease: 'power2.out' });
-        });
-        document.querySelectorAll('a, button, .theme-swatch, .drag-card').forEach(el => {
-            el.addEventListener('mouseenter', () => {
-                gsap.to(dot, { scale: 1.5, duration: 0.3 });
-                gsap.to(ring, { scale: 1.6, opacity: 0.5, duration: 0.3 });
-            });
-            el.addEventListener('mouseleave', () => {
-                gsap.to(dot, { scale: 1, duration: 0.3 });
-                gsap.to(ring, { scale: 1, opacity: 1, duration: 0.3 });
-            });
+        // Header scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.getElementById('main-header');
+            if (window.scrollY > 50) header.classList.add('scrolled');
+            else header.classList.remove('scrolled');
         });
 
-        /* ===== THEME PICKER ===== */
-        document.querySelectorAll('.theme-swatch').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.theme-swatch').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const cyan = btn.dataset.cyan;
-                const violet = btn.dataset.violet;
-                document.documentElement.style.setProperty('--neon-cyan', cyan);
-                document.documentElement.style.setProperty('--neon-violet', violet);
-                // Update cursor glow to match
-                dot.style.background = cyan;
-                dot.style.boxShadow = `0 0 12px ${cyan}, 0 0 30px ${cyan}`;
+        window.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.add('loaded');
+            gsap.to(".gsap-hero", { opacity: 1, y: 0, duration: 2, ease: "power4.out" });
+            gsap.utils.toArray('.gsap-fade-up').forEach(el => {
+                gsap.from(el, {
+                    y: 50, opacity: 0, duration: 1.2, ease: "power3.out",
+                    scrollTrigger: { trigger: el, start: "top 85%" }
+                });
             });
         });
 
-        /* ===== GSAP SCROLL ANIMATIONS ===== */
-        // Animate Hero Section on Load
-        gsap.to(".gsap-hero", {
-            y: 0,
-            opacity: 1,
-            duration: 1.5,
-            ease: "power4.out",
-            delay: 0.2
-        });
+        // ── Face Scan Logic ──
+        document.getElementById('face-scan-input').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-        // Setup Scroll Animations for general elements
-        gsap.utils.toArray('.gsap-fade-up').forEach(element => {
-            gsap.fromTo(element, 
-                { y: 50, opacity: 0 },
-                { 
-                    y: 0, 
-                    opacity: 1, 
-                    duration: 1, 
-                    ease: "power3.out",
-                    scrollTrigger: {
-                        trigger: element,
-                        start: "top 80%",
-                        toggleActions: "play none none reverse"
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const base64 = event.target.result;
+                document.getElementById('scan-image').src = base64;
+                document.getElementById('scan-preview').classList.remove('hidden');
+                document.getElementById('scan-status').textContent = 'Analyzing biometrics...';
+
+                // Store the image for fitting room
+                localStorage.setItem('aura_face_scan', base64);
+
+                try {
+                    const res = await fetch('http://localhost:3000/api/generate-biometrics', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: base64 })
+                    });
+                    const data = await res.json();
+                    if (data.biometrics) {
+                        localStorage.setItem('aura_biometrics', JSON.stringify(data.biometrics));
+                        document.getElementById('scan-status').textContent = '✓ Biometric profile captured';
                     }
+                } catch (err) {
+                    document.getElementById('scan-status').textContent = 'Scan complete (offline mode)';
                 }
-            );
+            };
+            reader.readAsDataURL(file);
         });
 
-        // Staggered animation for Bento Grid Cards
-        gsap.fromTo(".gsap-bento > div", 
-            { y: 50, opacity: 0 },
-            { 
-                y: 0, 
-                opacity: 1, 
-                duration: 1, 
-                stagger: 0.2,
-                ease: "power3.out",
-                scrollTrigger: {
-                    trigger: ".gsap-bento",
-                    start: "top 75%",
-                }
-            }
-        );
-
-        /* ===== DRAGGABLE STYLE CANVAS ===== */
-        Draggable.create('.drag-card', {
-            type: 'x,y',
-            bounds: '#canvas-area',
-            edgeResistance: 0.65,
-            inertia: false,
-            onDragStart: function() { this.target.classList.add('dragging'); },
-            onDragEnd: function() { this.target.classList.remove('dragging'); }
+        // ── Save Height/Weight ──
+        document.getElementById('save-metrics').addEventListener('click', () => {
+            const h = document.getElementById('height-val').value;
+            const w = document.getElementById('weight-val').value;
+            if (h) localStorage.setItem('aura_height', h);
+            if (w) localStorage.setItem('aura_weight', w);
+            alert('Profile metrics saved.');
         });
 
-        /* ===== WEBCAM TOGGLE ===== */
-        document.querySelectorAll('.cam-btn').forEach(btn => {
-            btn.addEventListener('click', async function() {
-                const card = this.closest('.glass');
-                const preview = card.querySelector('.cam-preview');
-                const video = card.querySelector('.cam-video');
-                if (preview.classList.contains('hidden')) {
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                        video.srcObject = stream;
-                        preview.classList.remove('hidden');
-                        this.textContent = '⏹ Stop Camera';
-                    } catch(e) {
-                        alert('Camera access denied or unavailable.');
-                    }
-                } else {
-                    video.srcObject.getTracks().forEach(t => t.stop());
-                    video.srcObject = null;
-                    preview.classList.add('hidden');
-                    this.textContent = '📷 Open Web Camera';
-                }
-            });
-        });
-
-        /* ===== INPUT GLOW EFFECT ===== */
-        document.getElementById('height-input').addEventListener('focus', () => {
-            document.getElementById('height-glow').style.width = '100%';
-        });
-        document.getElementById('height-input').addEventListener('blur', () => {
-            if (!document.getElementById('height-input').value) document.getElementById('height-glow').style.width = '0';
-        });
-        document.getElementById('weight-input').addEventListener('focus', () => {
-            document.getElementById('weight-glow').style.width = '100%';
-        });
-        document.getElementById('weight-input').addEventListener('blur', () => {
-            if (!document.getElementById('weight-input').value) document.getElementById('weight-glow').style.width = '0';
-        });
-        /* ===== LOCALSTORAGE SAVE & REDIRECT ===== */
-        document.getElementById('generate-btn').addEventListener('click', function() {
-            const height = document.getElementById('height-input').value.trim() || '178 cm';
-            const weight = document.getElementById('weight-input').value.trim() || '72 kg';
-            const gender = Math.random() < 0.5 ? 'Male' : 'Female';
-            localStorage.setItem('aura_height', height);
-            localStorage.setItem('aura_weight', weight);
-            localStorage.setItem('aura_user_gender', gender);
-            localStorage.setItem('aura_timestamp', new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
-            // Pulse animation then redirect
-            gsap.to(this, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1, onComplete: () => {
-                window.location.href = 'dashboard.html';
-            }});
-        });
+        // Load existing metrics
+        const savedH = localStorage.getItem('aura_height');
+        const savedW = localStorage.getItem('aura_weight');
+        if (savedH) document.getElementById('height-val').value = savedH;
+        if (savedW) document.getElementById('weight-val').value = savedW;
     </script>
 </body>
 </html>
